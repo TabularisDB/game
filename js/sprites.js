@@ -255,6 +255,46 @@ function bossSprite(color) {
   return render(BOSS.map(r => r.replace(/X/g, map[0]).replace(/D/g, map[1])));
 }
 
+// World 3 boss — PostgreSQL's elephant, trunk and tusk forward, facing left.
+const BOSS_ELEPHANT = [
+  '..kkkkk.........',
+  '.krrrrrkkkkkkk..',
+  '.krrrrrrrrrrrrk.',
+  'kkrpwrkRRRkrrrrk',
+  'krrrrrkRRRkrrrrk',
+  'krrrrrkRRRkrrrrk',
+  'krrkrrrkkkrrrrrk',
+  'krrkwwkrrrrrrrrk',
+  'krrkkkkrrrrrrrrk',
+  '.krrk.krrrrrrrk.',
+  '.krrk.krrrrrrrk.',
+  '..kk..krrrrrrrk.',
+  '......kRRrrRRrk.',
+  '.....kRRkkkRRkk.',
+  '.....kRRk.kRRk..',
+  '.....kkkk.kkkk..',
+];
+
+// World 2 boss — MySQL's dolphin, upright on its tail, facing left.
+const BOSS_DOLPHIN = [
+  '......kkkk......',
+  '.....kmmmmk.....',
+  '.kkkkmmpwmmk....',
+  'kmmmmmmmmmmmk...',
+  '.kkkkmwmmmmmk...',
+  '.....kwwmmmmk...',
+  '.....kwwmmmmkk..',
+  '....kkwwmmmmmMk.',
+  '...kwwwmmmmmMk..',
+  '...kkwwmmmmmk...',
+  '.....kwwmmmk....',
+  '.....kwmmmk.....',
+  '......kmmk......',
+  '.....kmMMmk.....',
+  '...kkmMMMMmkk...',
+  '..kMMMkkkkMMMk..',
+];
+
 // ----------------------------------------------------------------- items ---
 const COIN = [
   '..kkkkkkkk..',
@@ -552,8 +592,8 @@ export function buildSprites() {
     lockOpen: render(LOCK('g', 'G')),
     boss: {
       amber: bossSprite('amber'),
-      violet: bossSprite('violet'),
-      red: bossSprite('red'),
+      violet: render(BOSS_DOLPHIN),
+      red: render(BOSS_ELEPHANT),
     },
     coin: render(COIN, 12, 12),
     plugin: render(PLUGIN, 14, 9),
