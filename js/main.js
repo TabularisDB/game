@@ -128,23 +128,39 @@ if (new URLSearchParams(location.search).has('touch')) {
   document.body.classList.add('force-touch');
 }
 
-// fullscreen + landscape lock (best effort — iOS Safari has no fullscreen
+// fullscreen + landscape lock (best effort — iPhone Safari has no fullscreen
 // API: there the PWA manifest covers it via add-to-home-screen)
+const fsElement = () =>
+  document.fullscreenElement || document.webkitFullscreenElement;
+const fsRequest = () => {
+  const el = document.documentElement;
+  return el.requestFullscreen || el.webkitRequestFullscreen;
+};
 async function enterFullscreen() {
+  const req = fsRequest();
   try {
-    await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+    if (req) await req.call(document.documentElement, { navigationUI: 'hide' });
     await screen.orientation?.lock?.('landscape');
   } catch {}
 }
 document.getElementById('tb-fs')?.addEventListener('click', async () => {
-  if (document.fullscreenElement) { try { await document.exitFullscreen(); } catch {} }
-  else enterFullscreen();
+  if (fsElement()) {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    try { await exit?.call(document); } catch {}
+  } else enterFullscreen();
 });
-// on touch devices go fullscreen with the first tap, without further asking
+// on touch devices go fullscreen on tap — retry on every tap until it sticks
+// (one rejected gesture must not permanently disable the attempt); detach
+// once fullscreen is active or the API is unavailable (e.g. iPhone Safari).
 if (IS_TOUCH) {
-  addEventListener('pointerdown', () => {
-    if (!document.fullscreenElement) enterFullscreen();
-  }, { once: true });
+  const tryFs = () => {
+    if (fsElement() || !fsRequest()) {
+      removeEventListener('pointerdown', tryFs);
+      return;
+    }
+    enterFullscreen();
+  };
+  addEventListener('pointerdown', tryFs);
 }
 
 // tapping the playfield acts as "confirm" on menu screens
