@@ -106,16 +106,23 @@ export class AudioSys {
   gameover(){ [330, 311, 294, 262].forEach((f, i) => this.tone(f, 0.3, { vol: 0.1, delay: i * 0.22, type: 'triangle' })); }
 
   // --- music ---
-  playSong(i) { this.song = i; this.step = 0; this.clock = 0; }
+  // transpose (semitones) + tempo (×speed) give each level its own variation
+  // on the shared world theme without hand-authoring 12 separate loops.
+  playSong(i, { transpose = 0, tempo = 1 } = {}) {
+    this.song = i; this.step = 0; this.clock = 0;
+    this.transpose = transpose; this.tempo = tempo;
+  }
   stopSong() { this.song = -1; }
 
   update() {
     if (this.song < 0 || !this.ctx || this.muted) return;
     const s = SONGS[this.song];
-    if (this.clock++ % s.speed !== 0) return;
+    const speed = Math.max(3, Math.round(s.speed / (this.tempo || 1)));
+    if (this.clock++ % speed !== 0) return;
     const i = this.step++ % 16;
+    const tr = this.transpose || 0;
     const b = s.bass[i], l = s.lead[i];
-    if (b) this.tone(midi(b), 0.12, { type: 'square', vol: 0.035 });
-    if (l) this.tone(midi(l), 0.14, { type: 'triangle', vol: 0.045 });
+    if (b) this.tone(midi(b + tr), 0.12, { type: 'square', vol: 0.035 });
+    if (l) this.tone(midi(l + tr), 0.14, { type: 'triangle', vol: 0.045 });
   }
 }

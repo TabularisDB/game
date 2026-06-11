@@ -306,10 +306,17 @@ function startSession(globalIdx) {
   app.setState('intro');
 }
 
+// per-level variation on the world theme (boss = level 3 → neutral)
+const LEVEL_TRANSPOSE = [0, 5, 7, 0];
+const LEVEL_TEMPO = [1, 1.1, 0.92, 1];
+
 function enterLevel() {
   game.loadLevel(app.world, app.level, app.checkpoint);
   app.deathT = -1;
-  app.audio.playSong(game.isBossLevel ? 4 : app.world + 1);
+  app.audio.playSong(game.isBossLevel ? 4 : app.world + 1, {
+    transpose: LEVEL_TRANSPOSE[app.level],
+    tempo: LEVEL_TEMPO[app.level],
+  });
   app.setState('play');
 }
 

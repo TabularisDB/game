@@ -52,7 +52,8 @@ public/           static assets copied verbatim to dist:
 js/constants.js   palette, physics tuning, URLS, WORLDS, SOLID tile set
 js/sprites.js     char-grid pixel art + procedural tiles + drawLogoCube +
                   drawLogoPixel (inline pixelated brand "T" logo)
-js/audio.js       sfx + per-world music loops (frame-driven sequencer)
+js/audio.js       sfx + per-world music loops (frame-driven sequencer);
+                  playSong(i,{transpose,tempo}) varies the theme per level
 js/input.js       keyboard (multi-action keys) + touch buttons + gamepad polling
 js/levels.js      12 levels via grid-builder DSL + validateLevels()
 js/entities.js    Player, enemies, Boss, pickups, projectiles, particles
@@ -188,4 +189,6 @@ with `index.html?consent` (force-shows it even with no tracker configured).
 - Background ambience lives in `Game.drawBackground`: parallax datacenter
   (rack skyline + LEDs, patrol drones, data conduits, motes; vertical levels
   get full-height server columns + riser cables). Keep alphas low —
-  readability beats decoration.
+  readability beats decoration. `drawBgMotif` adds a per-level layer keyed by
+  `bgVariant` (= level index): 1 = binary rain, 2 = query-graph constellation;
+  mote density also scales with the variant.

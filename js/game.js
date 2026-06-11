@@ -27,6 +27,7 @@ export class Game {
     this.W = this.map[0].length;
     this.isBossLevel = !!data.boss;
     this.isVertical = !!data.vertical;
+    this.bgVariant = li; // per-level background flavor (0..3)
     this.boss = null;
     this.bossDead = false;
 
@@ -465,9 +466,10 @@ export class Game {
     ctx.stroke();
     ctx.restore();
 
-    // far: drifting data motes
+    // far: drifting data motes (denser in later levels of a world)
     ctx.save();
-    for (let i = 0; i < 22; i++) {
+    const moteN = 22 + this.bgVariant * 7;
+    for (let i = 0; i < moteN; i++) {
       const span = VIEW_W + 20;
       let x = ((i * 97 + 31 - camX * 0.1 + F * (0.08 + rnd(i) * 0.1)) % span + span) % span - 10;
       const y = ((i * 53 + rnd(i, 1) * 200 - F * 0.06 * (1 + rnd(i, 2)) - camY * 0.1) % VIEW_H + VIEW_H) % VIEW_H;
@@ -624,6 +626,52 @@ export class Game {
         ctx.closePath();
         ctx.fill();
       }
+    }
+    ctx.restore();
+
+    this.drawBgMotif(ctx, world, camX, F, rnd);
+  }
+
+  // A distinct, low-alpha ambient layer per level so each one reads
+  // differently while keeping the world's identity.
+  drawBgMotif(ctx, world, camX, F, rnd) {
+    ctx.save();
+    if (this.bgVariant === 1) {
+      // binary rain: faint columns of scrolling 0/1 digits
+      ctx.font = '8px "JetBrains Mono", monospace';
+      ctx.textAlign = 'left';
+      for (let i = 0; i < 18; i++) {
+        const x = ((i * 71 - camX * 0.35) % VIEW_W + VIEW_W) % VIEW_W;
+        const head = F * (0.6 + (i % 3) * 0.25) + i * 60;
+        for (let j = 0; j < 7; j++) {
+          const y = ((head + j * 16) % (VIEW_H + 40)) - 20;
+          ctx.globalAlpha = 0.04 + 0.035 * ((i + j) % 3);
+          ctx.fillStyle = world.accent;
+          ctx.fillText(((i * 7 + j * 13 + (F >> 5)) % 2) ? '1' : '0', x, y);
+        }
+      }
+    } else if (this.bgVariant === 2) {
+      // query-graph constellation: faint nodes wired to near neighbours
+      const N = 8, pts = [];
+      for (let i = 0; i < N; i++) {
+        const span = VIEW_W + 80;
+        const x = ((i * 137 + 40 - camX * 0.3) % span + span) % span - 40;
+        const y = 26 + (i * 53) % (VIEW_H - 56) + Math.sin((F + i * 37) / 80) * 4;
+        pts.push([x, y]);
+      }
+      ctx.strokeStyle = world.accent;
+      ctx.fillStyle = world.accent;
+      ctx.globalAlpha = 0.09;
+      for (let i = 0; i < N; i++) {
+        for (let j = i + 1; j < N; j++) {
+          const dx = pts[i][0] - pts[j][0], dy = pts[i][1] - pts[j][1];
+          if (dx * dx + dy * dy < 130 * 130) {
+            ctx.beginPath(); ctx.moveTo(pts[i][0], pts[i][1]); ctx.lineTo(pts[j][0], pts[j][1]); ctx.stroke();
+          }
+        }
+      }
+      ctx.globalAlpha = 0.22;
+      for (const [x, y] of pts) ctx.fillRect(x - 1, y - 1, 3, 3);
     }
     ctx.restore();
   }
