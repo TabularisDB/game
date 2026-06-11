@@ -376,7 +376,8 @@ export class Boss extends Enemy {
     this.dir = -1;
     this.stun = 0;
     this.jumpT = 110;
-    this.throwT = 130;
+    this.atkT = 120;  // frames to the next special attack
+    this.tele = 0;    // telegraph windup remaining before it fires
     this.stompable = true;
   }
   update(g) {
@@ -385,6 +386,11 @@ export class Boss extends Enemy {
     if (!this.active) return;
     if (this.stun > 0) {
       this.stun--;
+      this.vx = 0;
+    } else if (this.tele > 0) {
+      // winding up: hold position, flash, then commit the attack
+      this.vx = 0;
+      if (--this.tele <= 0) this.fireAttack(g);
     } else {
       const p = g.player;
       this.dir = p.x + p.w / 2 < this.cx ? -1 : 1;
@@ -394,20 +400,51 @@ export class Boss extends Enemy {
         this.vy = -5.4;
         this.jumpT = 150 - this.worldIdx * 25 - (this.maxHp - this.hp) * 12;
       }
-      if (this.worldIdx >= 1 && --this.throwT <= 0) {
-        const n = this.worldIdx >= 2 ? 2 : 1;
-        for (let i = 0; i < n; i++) {
-          const dx = (g.player.cx ?? g.player.x) - this.cx;
-          g.orbs.push(new Orb(this.cx, this.y + 6, Math.sign(dx) * (1.2 + i * 0.7), -3.4 - i * 0.4));
-        }
-        this.throwT = 170 - this.worldIdx * 35;
-        g.app.audio.bump();
-      }
+      if (--this.atkT <= 0 && this.onGround) this.beginAttack(g);
     }
     this.vy = Math.min(this.vy + GRAVITY, MAX_FALL);
     this.hitWall = false;
     g.moveEntity(this);
     if (this.hitWall) this.dir *= -1;
+  }
+  // Telegraph the signature attack: stand, name it, then fireAttack() commits.
+  beginAttack(g) {
+    this.tele = 46;
+    this.vx = 0;
+    g.floatText(this.cx, this.y - 12,
+      ['ACQUIRING LOCK', 'LAG SPIKE', 'DEADLOCK'][this.worldIdx], '#fde047');
+    g.app.audio.bump();
+  }
+  fireAttack(g) {
+    const rage = this.maxHp - this.hp;
+    const pcx = g.player.x + g.player.w / 2;
+    if (this.worldIdx === 0) {
+      // TABLE LOCK — slam the floor; twin shockwaves you must jump
+      this.vy = -3;
+      g.shake = Math.max(g.shake, 9);
+      g.app.audio.bosshit();
+      const fy = this.y + this.h - 11;
+      g.orbs.push(new Shockwave(this.x - 12, fy, -1, this.color));
+      g.orbs.push(new Shockwave(this.x + this.w, fy, 1, this.color));
+    } else if (this.worldIdx === 1) {
+      // REPLICATION LAG — blink across the arena, then an aimed orb
+      g.spark(this.cx, this.y + this.h / 2, '#a78bfa', 10);
+      const mid = g.W * TILE / 2;
+      const minX = 2 * TILE, maxX = (g.W - 2) * TILE - this.w;
+      this.x = this.cx < mid ? Math.min(maxX, mid + 50) : Math.max(minX, mid - 50 - this.w);
+      g.spark(this.cx, this.y + this.h / 2, '#a78bfa', 10);
+      g.app.audio.warp();
+      g.orbs.push(new Orb(this.cx, this.y + 6, Math.sign(pcx - this.cx) * 1.6, -3));
+    } else {
+      // THE DEADLOCK — fast 3-way orb barrage toward the player
+      g.app.audio.bump();
+      const s = Math.sign(pcx - this.cx) || 1;
+      g.orbs.push(new Orb(this.cx, this.y + 6, s * 0.2, -4.6));
+      g.orbs.push(new Orb(this.cx, this.y + 6, s * 1.1, -4.0));
+      g.orbs.push(new Orb(this.cx, this.y + 6, s * 2.2, -2.6));
+    }
+    // next attack comes sooner the angrier it gets / the later the world
+    this.atkT = Math.max(70, 190 - this.worldIdx * 30 - rage * 14);
   }
   damage(g, n) {
     if (this.dead) return;
@@ -433,6 +470,18 @@ export class Boss extends Enemy {
       ctx.save(); ctx.globalAlpha = 1 - this.t2 / 40;
     }
     if (this.stun > 0 && this.stun % 6 < 3) { if (this.dead) ctx.restore(); return; }
+    // telegraph: expanding warning halo + flicker while winding up an attack
+    if (this.tele > 0) {
+      const k = 1 - this.tele / 46;
+      ctx.save();
+      ctx.globalAlpha = 0.35 + 0.45 * Math.abs(Math.sin(this.tele / 3));
+      ctx.strokeStyle = '#fde047';
+      ctx.strokeRect(
+        Math.round(this.x - 3 - k * 4), Math.round(this.y - 3 - k * 4),
+        this.w + 6 + k * 8, this.h + 6 + k * 8,
+      );
+      ctx.restore();
+    }
     const img = g.app.sprites.boss[this.color];
     const sq = this.stun > 0 ? 0.85 : 1;
     ctx.save();
@@ -486,6 +535,36 @@ export class Orb {
   }
   draw(g, ctx) {
     drawSprite(ctx, g.app.sprites.orb, this.x, this.y + Math.sin(this.t / 4));
+  }
+}
+
+// Ground shockwave from a boss slam — rides along the floor; jump it.
+export class Shockwave {
+  constructor(x, y, dir, color = '#f59e0b') {
+    this.x = x; this.y = y; this.w = 12; this.h = 11;
+    this.dir = dir; this.color = color;
+    this.t = 0; this.removed = false;
+  }
+  update(g) {
+    this.t++;
+    this.x += this.dir * 3.1;
+    const lead = Math.floor((this.x + (this.dir > 0 ? this.w : 0)) / TILE);
+    const ty = Math.floor((this.y + this.h - 2) / TILE);
+    if (this.t > 110 || g.solidAt(lead, ty) || this.x < TILE || this.x > (g.W - 1) * TILE) {
+      this.removed = true;
+      g.spark(this.x + this.w / 2, this.y + this.h, this.color, 4);
+    } else if (g.frame % 4 === 0) {
+      g.spark(this.x + this.w / 2, this.y + this.h, this.color, 1);
+    }
+  }
+  draw(g, ctx) {
+    ctx.save();
+    ctx.globalAlpha = 0.55 + 0.35 * Math.abs(Math.sin(this.t / 3));
+    ctx.fillStyle = this.color;
+    const x = Math.round(this.x), y = Math.round(this.y);
+    ctx.fillRect(x, y + 5, this.w, this.h - 5);                       // base
+    ctx.fillRect(x + (this.dir > 0 ? this.w - 4 : 0), y + 1, 4, this.h - 1); // crest
+    ctx.restore();
   }
 }
 
