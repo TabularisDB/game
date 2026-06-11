@@ -5,7 +5,7 @@ import { TILE, VIEW_W, VIEW_H, SOLID, ONEWAY, CLIMB, WORLDS } from './constants.
 import { LEVELS } from './levels.js';
 import {
   Player, Blob, Snail, Wisp, Drone, Daemon, LockGate, Boss,
-  ItemPickup, Plugin, Particle, FloatText, overlap,
+  ItemPickup, SkyDrop, Plugin, Particle, FloatText, overlap,
 } from './entities.js';
 
 const T = TILE;
@@ -46,6 +46,7 @@ export class Game {
     this.clearT = -1;
     this.frame = 0;
     this.shake = 0;
+    this.dropT = 600; // boss arenas: frames until the next sky power-up
 
     this.pluginsGot = [];
     this.pluginTotal = 0;
@@ -218,6 +219,18 @@ export class Game {
     for (const e of this.enemies) if (e.active) e.update(this);
     for (const l of this.locks) l.update(this);
     if (this.boss) this.boss.update(this);
+
+    // boss arenas: every 10s a support power-up parachutes in — always the
+    // next tier the player is missing (MCP gun first), nothing if maxed out
+    if (this.isBossLevel && this.boss?.active && !this.boss.dead && !p.dead && --this.dropT <= 0) {
+      this.dropT = 600;
+      const kind = !p.hasMCP ? 'mcp' : !p.big ? 'scale' : !p.hasIndex ? 'index' : null;
+      if (kind) {
+        const tx = Math.floor(this.cam.x / T) + 3 + Math.floor(Math.random() * (VIEW_W / T - 6));
+        this.items.push(new SkyDrop(Math.min(tx, this.W - 3), kind));
+        this.texts.push(new FloatText(Math.min(tx, this.W - 3) * T + 8, 26, 'HOTFIX INBOUND', '#a78bfa'));
+      }
+    }
     for (const arr of [this.items, this.bolts, this.orbs, this.particles, this.texts]) {
       for (const o of arr) o.update(this);
     }
@@ -246,15 +259,21 @@ export class Game {
     const targets = [...this.enemies.filter(e => e.active), ...(this.boss && this.boss.active ? [this.boss] : [])];
     for (const e of targets) {
       if (e.dead || !e.hits(p)) continue;
-      const falling = p.vy > 0.5;
+      // closing speed is relative: an enemy leaping up into the player's feet
+      // is still a stomp, not a side hit
+      const falling = p.vy - Math.min(0, e.vy || 0) > 0.5;
       // a stomp is any descent that started above the enemy's head — judge by
       // last frame's positions so fast mutual closure can't read as a side hit
       const prevFeet = p.y + p.h - p.vy;
       const prevTop = e.y - (e.vy || 0);
-      const fromAbove = p.y + p.h - e.y < 9 || prevFeet <= prevTop + 6;
+      const headZone = Math.max(9, e.h * 0.4);
+      const fromAbove = p.y + p.h - e.y < headZone || prevFeet <= prevTop + 6;
       if (e.stompable && falling && fromAbove) {
         e.stomp(this);
         this.app.audio.stomp();
+        // bosses survive a stomp, so the overlap lingers a few frames while
+        // the bounce separates us — mercy frames keep it from reading as a hit
+        if (!e.dead) p.inv = Math.max(p.inv, 22);
         p.vy = this.app.input.held.jump ? -6.2 : -4.2;
         this.spark(e.cx, e.y, '#ffffff', 5);
         if (!(e instanceof Boss)) this.shake = Math.max(this.shake, 4);

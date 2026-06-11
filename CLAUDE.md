@@ -108,8 +108,14 @@ the smoke bot all branch on it).
   big) — never make the big hitbox ≥16px.
 - Blocks need a standable floor 2–5 rows below them to be bumpable.
 - Damage chain: MCP → Index → Big (Vertical Scaling) → death. Stomps judge
-  "from above" using previous-frame positions (prevFeet vs prevTop) so
-  head-on closure can't read as a side hit. Boss: stomp = 1 hp, MCP bolt = ¼.
+  "from above" using previous-frame positions (prevFeet vs prevTop) and
+  *relative* vertical velocity so head-on closure can't read as a side hit;
+  stomping an enemy that survives (bosses) grants 22 mercy frames so the
+  lingering overlap can't hurt. Boss: stomp = 1 hp, MCP bolt = ¼.
+- Boss arenas: while the boss lives, every 10s a `SkyDrop` parachutes in the
+  next power tier the player is missing (MCP gun first), nothing if maxed.
+- Boss sprites: W2 = MySQL dolphin, W3 = PostgreSQL elephant (dedicated
+  grids in sprites.js); W1 keeps the generic `bossSprite` monster.
 
 ## Testing (run after ANY level/engine change)
 

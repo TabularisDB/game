@@ -596,11 +596,26 @@ export class Shockwave {
 }
 
 // ----------------------------------------------------------------- items ---
+function grantPower(g, x, y, kind) {
+  g.app.audio.powerup();
+  if (kind === 'index') {
+    g.player.hasIndex = true;
+    g.floatText(x, y - 10, 'INDEX! queries run faster', '#fde047');
+  } else if (kind === 'scale') {
+    if (g.player.grow(g)) g.floatText(x, y - 10, 'VERTICAL SCALING! server upgraded', '#34d399');
+    else g.floatText(x, y - 10, 'already at max capacity +500', '#34d399');
+  } else {
+    g.player.hasMCP = true;
+    g.floatText(x, y - 10, 'MCP AGENT ONLINE — press X', '#a78bfa');
+  }
+  g.app.addScore(500);
+}
+
 export class ItemPickup {
   constructor(tx, ty, kind) {
     this.x = tx * TILE; this.y = ty * TILE;
     this.w = 14; this.h = 14;
-    this.kind = kind; // 'index' | 'mcp'
+    this.kind = kind; // 'index' | 'scale' | 'mcp'
     this.t = 0; this.removed = false;
     this.riseFrom = this.y + 14;
   }
@@ -608,18 +623,7 @@ export class ItemPickup {
     this.t++;
     if (overlap(this, g.player) && this.t > 12 && !g.player.dead) {
       this.removed = true;
-      g.app.audio.powerup();
-      if (this.kind === 'index') {
-        g.player.hasIndex = true;
-        g.floatText(this.x, this.y - 10, 'INDEX! queries run faster', '#fde047');
-      } else if (this.kind === 'scale') {
-        if (g.player.grow(g)) g.floatText(this.x, this.y - 10, 'VERTICAL SCALING! server upgraded', '#34d399');
-        else g.floatText(this.x, this.y - 10, 'already at max capacity +500', '#34d399');
-      } else {
-        g.player.hasMCP = true;
-        g.floatText(this.x, this.y - 10, 'MCP AGENT ONLINE — press X', '#a78bfa');
-      }
-      g.app.addScore(500);
+      grantPower(g, this.x, this.y, this.kind);
     }
   }
   draw(g, ctx) {
@@ -627,6 +631,58 @@ export class ItemPickup {
     const y = this.riseFrom + (this.y - this.riseFrom) * rise + (rise === 1 ? Math.sin(this.t / 12) * 2 : 0);
     const img = { index: g.app.sprites.indexItem, scale: g.app.sprites.scaleItem, mcp: g.app.sprites.mcpItem }[this.kind];
     drawSprite(ctx, img, this.x + 1, y);
+  }
+}
+
+// Boss-arena care package: a power-up parachuting down from the ceiling.
+// Drifts slowly, lands on the first solid tile, despawns if ignored too long.
+export class SkyDrop {
+  constructor(tx, kind) {
+    this.x = tx * TILE + 1; this.y = -16;
+    this.w = 14; this.h = 14;
+    this.kind = kind;
+    this.t = 0; this.removed = false;
+    this.landed = false;
+  }
+  update(g) {
+    this.t++;
+    if (!this.landed) {
+      this.y += 1.1;
+      const ty = Math.floor((this.y + this.h) / TILE);
+      const tx0 = Math.floor(this.x / TILE), tx1 = Math.floor((this.x + this.w - 1) / TILE);
+      if (g.solidAt(tx0, ty) || g.solidAt(tx1, ty)) {
+        this.landed = true;
+        this.y = ty * TILE - this.h;
+        g.dust(this.x + this.w / 2, this.y + this.h, 2);
+      }
+      if (this.y > g.H * TILE + 20) this.removed = true; // drifted into a pit
+    } else if (this.t > 1200) {
+      this.removed = true;
+    }
+    if (!g.player.dead && overlap(this, g.player)) {
+      this.removed = true;
+      grantPower(g, this.x, this.y, this.kind);
+    }
+  }
+  draw(g, ctx) {
+    if (this.landed && this.t > 1050 && this.t % 8 < 4) return; // about to despawn
+    const img = { index: g.app.sprites.indexItem, scale: g.app.sprites.scaleItem, mcp: g.app.sprites.mcpItem }[this.kind];
+    const sway = this.landed ? 0 : Math.sin(this.t / 16) * 2;
+    drawSprite(ctx, img, this.x + 1 + sway, this.y);
+    if (!this.landed) {
+      const cx = this.x + this.w / 2 + sway;
+      ctx.save();
+      ctx.strokeStyle = '#a78bfa';
+      ctx.beginPath();
+      ctx.arc(cx, this.y - 3, 8, Math.PI, 0);
+      ctx.stroke();
+      ctx.globalAlpha = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(cx - 8, this.y - 3); ctx.lineTo(this.x + 3 + sway, this.y + 3);
+      ctx.moveTo(cx + 8, this.y - 3); ctx.lineTo(this.x + this.w - 3 + sway, this.y + 3);
+      ctx.stroke();
+      ctx.restore();
+    }
   }
 }
 
