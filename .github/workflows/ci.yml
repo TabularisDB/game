@@ -1,0 +1,65 @@
+name: CI & Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Static validators (levels, geometry, pickups)
+        run: pnpm test
+
+      - name: Smoke test — headless bot must clear all 12 levels
+        run: |
+          python3 -m http.server 8123 &
+          sleep 2
+          LOG=$(google-chrome --headless=new --no-sandbox --disable-gpu \
+            --enable-logging=stderr --virtual-time-budget=200000 \
+            http://localhost:8123/test/smoke.html 2>&1 | grep -E "LEVEL|PAGEERROR" || true)
+          echo "$LOG"
+          if echo "$LOG" | grep -q "PAGEERROR"; then exit 1; fi
+          CLEARED=$(echo "$LOG" | grep -c CLEARED || true)
+          echo "cleared: $CLEARED/12"
+          test "$CLEARED" -eq 12
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4

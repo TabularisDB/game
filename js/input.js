@@ -13,11 +13,15 @@ const KEYMAP = {
   Enter: ['start'], KeyP: ['pause'], Escape: ['pause'], KeyM: ['mute'],
 };
 
+const GP_ACTIONS = ['jump', 'fire', 'start', 'pause', 'mute', 'up', 'down', 'left', 'right'];
+
 export class Input {
   constructor() {
     this.held = {};
     this.pressed = {};
     this.anyKey = false;
+    this.gamepadActive = false;
+    this.gpPrev = {};
 
     addEventListener('keydown', (e) => {
       const actions = KEYMAP[e.code];
@@ -59,6 +63,33 @@ export class Input {
       el.addEventListener('pointerleave', off);
       el.addEventListener('contextmenu', (e) => e.preventDefault());
     }
+  }
+
+  // Gamepad API is poll-based: called once per frame by the main loop.
+  // Standard mapping: stick/d-pad move, A/Y jump, B/X fire, Start = confirm
+  // and pause (screens check confirm before pause), Select = sound toggle.
+  pollGamepad() {
+    const pads = navigator.getGamepads ? navigator.getGamepads() : [];
+    const gp = [...pads].find((p) => p && p.connected);
+    this.gamepadActive = !!gp;
+    const now = {};
+    if (gp) {
+      const b = (i) => !!gp.buttons[i]?.pressed;
+      now.jump = b(0) || b(3);
+      now.fire = b(1) || b(2);
+      now.start = b(9);
+      now.pause = b(9);
+      now.mute = b(8);
+      now.up = b(12) || gp.axes[1] < -0.5;
+      now.down = b(13) || gp.axes[1] > 0.5;
+      now.left = b(14) || gp.axes[0] < -0.4;
+      now.right = b(15) || gp.axes[0] > 0.4;
+    }
+    for (const a of GP_ACTIONS) {
+      if (now[a] && !this.gpPrev[a]) { this.pressed[a] = true; this.held[a] = true; }
+      else if (!now[a] && this.gpPrev[a]) this.held[a] = false;
+    }
+    this.gpPrev = now;
   }
 
   endFrame() {

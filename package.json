@@ -1,1 +1,15 @@
-{ "name": "tabularis-run", "version": "1.0.0", "type": "module", "private": true }
+{
+  "name": "tabularis-run",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node js/levels.js && node test/validate-geometry.js && node test/validate-plugins.js"
+  },
+  "devDependencies": {
+    "vite": "^8.0.16"
+  }
+}

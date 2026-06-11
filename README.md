@@ -35,17 +35,22 @@ attention back to the product.
 
 ## Run locally
 
-ES modules require a server (no `file://`):
-
 ```bash
-python3 -m http.server 8123
-# → http://localhost:8123
+pnpm install
+pnpm dev        # Vite dev server
+pnpm build      # production bundle → dist/
+pnpm test       # static validators (levels, geometry, pickups)
 ```
+
+The source is plain ESM, so any static server also works without a build
+(`python3 -m http.server 8123` — this is how the test suite runs).
 
 ## Controls
 
 - **←/→** (or A/D) move · **Space/Z/↑** jump · **X** shoot query (with MCP power-up)
 - **↓** enter SSH tunnel · **P/ESC** pause · **M** mute
+- **Gamepad** (standard mapping): stick/d-pad move, **A/Y** jump, **B/X** shoot,
+  **Start** pause/confirm, **Select** mute — see the in-game CONTROLS screen
 
 ### Mobile
 
@@ -60,12 +65,11 @@ force the touch UI on desktop for testing.
 
 ## Deployment — game.tabularis.dev
 
-The game is a self-contained static folder and lives on its own subdomain.
-Canonical URL and OG tags point to `https://game.tabularis.dev/`. To publish
-with GitHub Pages: enable Pages on this repo (deploy from branch, root) — the
-`CNAME` file already pins `game.tabularis.dev` — and add a DNS CNAME record
-for `game` pointing to `<user>.github.io`. Any other static host works the
-same: upload `index.html`, `og.png`, `CNAME`-equivalent config and `js/`.
+Every push to `main` runs the CI workflow (`.github/workflows/ci.yml`):
+static validators + the headless smoke bot (must clear 12/12), then a Vite
+build deployed to GitHub Pages. One-time setup: repo Settings → Pages →
+source "GitHub Actions", and a DNS CNAME record `game → tabularisdb.github.io`
+(`public/CNAME` pins the custom domain).
 
 To also embed it inside tabularis-website, use an iframe (note
 `allow="fullscreen"` for the mobile fullscreen button):
@@ -81,7 +85,7 @@ To also embed it inside tabularis-website, use an iframe (note
 - `node test/validate-geometry.js` — analytic traversability (pit widths, step heights)
 - `node test/validate-plugins.js` — every plugin AND every `?`/`I`/`M` block is reachable
 - vertical levels: BFS over platform spans proves the climb connects ground → flag
-- `test/og.html` — regenerates `og.png` (screenshot at 1200×630)
+- `test/og.html` — regenerates `public/og.png` (screenshot at 1200×630)
 - `test/icon.html` — regenerates the PWA icons (screenshot at 512 / 192)
 - `test/mapshot.html` — renders the level-select screen with a seeded save
 - `test/smoke.html` — a headless bot plays all 12 levels to the flag:

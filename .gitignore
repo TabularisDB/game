@@ -1,6 +1,8 @@
-# dependencies (none are needed — package.json exists only for "type": "module")
+# dependencies
 node_modules/
-pnpm-lock.yaml
+
+# build output
+dist/
 
 # OS / editor noise
 .DS_Store

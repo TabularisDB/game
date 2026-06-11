@@ -9,9 +9,11 @@ Live at **https://game.tabularis.dev** (own subdomain, static hosting,
 
 ## Hard constraints
 
-- **Vanilla JS + Canvas, zero dependencies, no build step.** ES modules served
-  as-is. Do not add npm packages, bundlers or frameworks. `package.json`
-  exists only for `"type": "module"` (enables `node --check` / node tests).
+- **Vanilla JS + Canvas, zero runtime dependencies.** The source is plain
+  ESM and MUST stay runnable without a build (the whole test suite serves it
+  raw). Vite is the only dev dependency: `pnpm dev` (dev server),
+  `pnpm build` (production bundle in `dist/`), `pnpm preview`. Do not add
+  runtime packages or frameworks.
 - **No external assets.** All pixel art is procedural (char-grid sprites in
   `js/sprites.js`), all audio is WebAudio chiptune (`js/audio.js`). PNGs in
   the repo (`og.png`, `icon-*.png`) are *generated* from test pages — never
@@ -25,20 +27,27 @@ Live at **https://game.tabularis.dev** (own subdomain, static hosting,
   - OG/Twitter meta in `index.html` point to `https://game.tabularis.dev/`
   - SQL-flavored copy everywhere: `COMMIT;` flag, `ROLLBACK` on death,
     `BEGIN;` checkpoints, "did you know" product facts on the clear screen
-- Game UI text is **English**; conversations with the maintainer are Italian.
+- Game UI text is **English** (including overlays and hints); conversations
+  with the maintainer are Italian.
+- **Git: never add `Co-Authored-By` or other trailers to commits.** If one
+  slips in, rewrite history and `push --force-with-lease`.
 
 ## File map
 
 ```
 index.html        page shell: meta/OG, PWA links, CSS, touch UI, CTA, rotate overlay
-manifest.json     PWA (display fullscreen, landscape) — iOS fullscreen path
-CNAME             game.tabularis.dev (GitHub Pages)
-og.png            social card   → regenerate via test/og.html
-icon-192/512.png  PWA icons     → regenerate via test/icon.html
+vite.config.js    dev server + build config (target es2022, outDir dist)
+public/           static assets copied verbatim to dist:
+  manifest.json   PWA (display fullscreen, landscape) — iOS fullscreen path
+  CNAME           game.tabularis.dev (GitHub Pages)
+  og.png          social card → regenerate via test/og.html (1200×630 shot)
+  icon-192/512    PWA icons   → regenerate via test/icon.html
+.github/workflows/ci.yml  on push to main: validators + smoke bot, then
+                  vite build + deploy to GitHub Pages
 js/constants.js   palette, physics tuning, URLS, WORLDS, SOLID tile set
 js/sprites.js     char-grid pixel art + procedural tiles + drawLogoCube
 js/audio.js       sfx + per-world music loops (frame-driven sequencer)
-js/input.js       keyboard (multi-action keys) + touch buttons
+js/input.js       keyboard (multi-action keys) + touch buttons + gamepad polling
 js/levels.js      12 levels via grid-builder DSL + validateLevels()
 js/entities.js    Player, enemies, Boss, pickups, projectiles, particles
 js/game.js        engine: collisions, camera, interactions, background, render
@@ -93,13 +102,18 @@ the smoke bot all branch on it).
 ## Testing (run after ANY level/engine change)
 
 ```bash
+pnpm test                         # = the three node validators below
 node js/levels.js                 # data sanity (S/F present, warps, row lengths)
 node test/validate-geometry.js    # pits/steps; vertical levels: BFS span chain
 node test/validate-plugins.js     # plugins AND ?/I/M/R blocks reachable
-python3 -m http.server 8123 &     # then:
+python3 -m http.server 8123 &     # serves RAW source (works without build); then:
 chromium --headless=new --no-sandbox --enable-logging=stderr \
   --virtual-time-budget=200000 http://localhost:8123/test/smoke.html 2>&1 | grep LEVEL
 ```
+
+CI (`.github/workflows/ci.yml`) runs the same suite on every push to `main`
+and fails unless the bot clears 12/12; on success it builds with Vite and
+deploys `dist/` to GitHub Pages (repo setting: Pages source = GitHub Actions).
 
 The smoke bot must report **12/12 CLEARED**. It is edge-aware and
 coyote-aware on horizontal levels and switches to a span-climbing strategy on
@@ -109,6 +123,14 @@ so it validates traversability, not combat. Visual checks: screenshot
 `test/sharecard.html`, `test/og.html`, `test/icon.html`. The headless pattern
 is `chromium --headless=new --no-sandbox --hide-scrollbars
 --virtual-time-budget=N --screenshot=out.png <url>`.
+
+## Input
+
+Keyboard (multi-action keys: ArrowUp = jump+menu-up), touch buttons, and
+gamepads via the Gamepad API — `Input.pollGamepad()` is called once per
+fixed step; standard mapping (stick/d-pad move, A/Y jump, B/X fire,
+Start = confirm+pause — screens check confirm before pause — Select = mute).
+The title menu has a CONTROLS screen listing all three schemes.
 
 ## Mobile
 
@@ -121,10 +143,12 @@ rotate-device overlay. Respect `env(safe-area-inset-*)`.
 
 ## Deployment
 
-Static folder → any host behind `game.tabularis.dev`. GitHub Pages: enable
-Pages on the repo root, `CNAME` is already there; DNS needs a CNAME record
-`game → <user>.github.io`. If embedded in tabularis-website use an iframe
-with `allow="fullscreen"`. After changing share/OG URLs, regenerate `og.png`.
+Repo: https://github.com/TabularisDB/game — every push to `main` tests,
+builds and deploys to GitHub Pages automatically (set Pages source to
+"GitHub Actions" once; DNS: CNAME record `game → tabularisdb.github.io`;
+`public/CNAME` pins the domain). If embedded in tabularis-website use an
+iframe with `allow="fullscreen"`. After changing share/OG URLs, regenerate
+`public/og.png`.
 
 ## Content registry (keep in sync when adding things)
 

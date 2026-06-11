@@ -279,17 +279,19 @@ function drawTitle(t) {
       app.setState('map');
     }]);
   }
+  items.push(['CONTROLS', () => app.setState('controls')]);
   items.push([`SOUND: ${app.audio.muted ? 'OFF' : 'ON'}`, () => app.audio.toggleMute()]);
 
   items.forEach(([label], i) => {
     const sel = i === app.menuIdx;
-    text(`${sel ? '> ' : '  '}${label}${sel ? ' _' : ''}`, VIEW_W / 2, 172 + i * 14, {
+    text(`${sel ? '> ' : '  '}${label}${sel ? ' _' : ''}`, VIEW_W / 2, 166 + i * 13, {
       size: 9, color: sel ? PAL.green : PAL.muted, bold: sel,
     });
   });
 
   const got = app.pluginCount();
-  if (got > 0) text(`plugins salvaged: ${got}/${TOTAL_PLUGINS}`, VIEW_W / 2, 220, { size: 7, color: PAL.violet });
+  if (got > 0) text(`plugins salvaged: ${got}/${TOTAL_PLUGINS}`, VIEW_W / 2, 222, { size: 7, color: PAL.violet });
+  if (app.input.gamepadActive) text('gamepad connected', VIEW_W - 8, 10, { size: 7, color: PAL.green, align: 'right' });
   text(HINT_MOVE, VIEW_W / 2, 236, { size: 7, color: PAL.muted });
   text(HINT_MENU, VIEW_W / 2, 248, { size: 7, color: '#4b5563' });
 
@@ -351,11 +353,12 @@ function drawMap() {
   if (app.input.pressed.left && app.mapIdx > 0) app.mapIdx--;
   if (app.input.pressed.down) app.mapIdx = Math.min(app.unlocked, app.mapIdx + 4);
   if (app.input.pressed.up && app.mapIdx >= 4) app.mapIdx -= 4;
-  if (app.input.pressed.pause) { app.menuIdx = 0; app.setState('title'); return; }
   if (app.input.pressed.start || (app.input.pressed.jump && !app.input.pressed.up)) {
     app.audio.ensure();
     startSession(app.mapIdx);
+    return;
   }
+  if (app.input.pressed.pause) { app.menuIdx = 0; app.setState('title'); }
 }
 
 function drawIntro(t) {
@@ -508,9 +511,52 @@ function drawVictory(t) {
   }
 }
 
+function drawControls() {
+  ctx.fillStyle = PAL.bg;
+  ctx.fillRect(0, 0, VIEW_W, VIEW_H);
+  text('CONTROLS', VIEW_W / 2, 26, { size: 14, color: PAL.bright, bold: true });
+
+  const col = (x, title, rows, color) => {
+    text(title, x, 56, { size: 8, color, bold: true, align: 'left' });
+    rows.forEach(([k, v], i) => {
+      text(k, x, 76 + i * 14, { size: 7, color: PAL.text, align: 'left' });
+      text(v, x + 88, 76 + i * 14, { size: 7, color: PAL.muted, align: 'left' });
+    });
+  };
+  col(34, 'KEYBOARD', [
+    ['←→ / A D', 'move'],
+    ['SPACE / Z / ↑', 'jump'],
+    ['X / CTRL', 'shoot query'],
+    ['↓', 'enter ssh tunnel'],
+    ['P / ESC', 'pause'],
+    ['M', 'sound on/off'],
+  ], PAL.cyan);
+  col(262, 'GAMEPAD', [
+    ['stick / d-pad', 'move'],
+    ['A / Y', 'jump'],
+    ['B / X', 'shoot query'],
+    ['d-pad ▼', 'enter ssh tunnel'],
+    ['START', 'pause / confirm'],
+    ['SELECT', 'sound on/off'],
+  ], PAL.violet);
+
+  text('TOUCH (mobile): ◀ ▼ ▶ d-pad · ▲ jump · ✦ shoot · ▼ tunnel', VIEW_W / 2, 188, { size: 7, color: PAL.muted });
+  text(
+    app.input.gamepadActive ? '● gamepad connected' : '○ no gamepad detected — press any button on it',
+    VIEW_W / 2, 210,
+    { size: 7, color: app.input.gamepadActive ? PAL.green : '#4b5563' },
+  );
+  text(IS_TOUCH ? '▲ back' : 'ENTER / ESC: back', VIEW_W / 2, 244, { size: 7, color: PAL.green });
+
+  if (app.input.pressed.start || app.input.pressed.pause || app.input.pressed.jump) {
+    app.setState('title');
+  }
+}
+
 // ------------------------------------------------------------------- loop ---
 const screens = {
   title: drawTitle,
+  controls: drawControls,
   map: drawMap,
   intro: drawIntro,
   play: drawPlay,
@@ -530,6 +576,7 @@ function loop(now) {
   while (acc >= STEP) {
     acc -= STEP;
     app.stateT++;
+    app.input.pollGamepad();
     screens[app.state](app.stateT);
     app.audio.update();
     app.input.endFrame();
