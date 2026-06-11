@@ -89,12 +89,29 @@
     }
     #cta a:hover, #cta button:hover { border-color: var(--blue); color: #fff; }
     #cta .star { color: #f59e0b; }
+    /* the share-score-card button is the primary CTA: filled so it pops */
+    #cta #share {
+      background: var(--cyan);
+      border-color: var(--cyan);
+      color: #06121a;
+      font-weight: 700;
+    }
+    #cta #share:hover { background: #fff; border-color: #fff; color: #06121a; }
+    /* draw the eye to it the moment a run ends */
+    body.run-ended #cta #share {
+      animation: sharePulse 1.4s ease-in-out infinite;
+    }
+    @keyframes sharePulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.55); }
+      50% { box-shadow: 0 0 0 7px rgba(34, 211, 238, 0); }
+    }
     #tagline {
       font-size: 11px;
       color: var(--muted);
       text-align: center;
     }
     #tagline a { color: var(--cyan); text-decoration: none; }
+    #tagline .star { color: #f59e0b; }
 
     /* touch controls — styled always, shown on coarse pointers
        (body.force-touch is the test hook: index.html?touch=1) */
@@ -218,7 +235,7 @@
   </div>
 
   <div id="tagline">
-    TABULARIS RUN · made with ❤ by <a href="https://tabularis.dev?utm_source=tabularis-run" target="_blank" rel="noopener">Tabularis</a> — the open-source database client for the AI era
+    TABULARIS RUN · made with ❤ by <a href="https://tabularis.dev?utm_source=tabularis-run" target="_blank" rel="noopener">Tabularis</a> — the open-source database client for the AI era · <a href="https://github.com/TabularisDB/tabularis" target="_blank" rel="noopener"><span class="star">★</span> star on GitHub</a>
   </div>
 
   <div id="rotate">

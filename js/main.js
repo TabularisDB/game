@@ -93,7 +93,10 @@ const app = {
   setState(s) {
     this.state = s;
     this.stateT = 0;
+    shareHit = null;
     cta.hidden = !(s === 'title' || s === 'gameover' || s === 'victory');
+    // pulse the share button while a finished run is on screen
+    document.body.classList.toggle('run-ended', s === 'gameover' || s === 'victory');
     if (s === 'title' || s === 'map') this.audio.playSong(0);
   },
 
@@ -163,10 +166,38 @@ if (IS_TOUCH) {
   addEventListener('pointerdown', tryFs);
 }
 
-// tapping the playfield acts as "confirm" on menu screens
-canvas.addEventListener('pointerdown', () => {
+// on-canvas SHARE button hit-rect (480×270 space), set by end screens each
+// frame and cleared on every state change
+let shareHit = null;
+
+// tapping the playfield acts as "confirm" on menu screens — unless the tap
+// lands on the on-canvas SHARE button, which generates the score card instead
+canvas.addEventListener('pointerdown', (e) => {
+  if (shareHit) {
+    const r = canvas.getBoundingClientRect();
+    const cx = (e.clientX - r.left) / r.width * VIEW_W;
+    const cy = (e.clientY - r.top) / r.height * VIEW_H;
+    if (cx >= shareHit.x && cx <= shareHit.x + shareHit.w &&
+        cy >= shareHit.y && cy <= shareHit.y + shareHit.h) {
+      e.stopPropagation();
+      shareScore();
+      return;
+    }
+  }
   if (app.state !== 'play' && app.state !== 'pause') app.input.pressed.start = true;
 });
+
+// Draws the SHARE button on the canvas at row y and registers its hit-rect.
+function drawShareButton(y) {
+  const w = 156, h = 22, x = (VIEW_W - w) / 2;
+  shareHit = { x, y, w, h };
+  const saved = shareFeedbackT > 0;
+  if (saved) shareFeedbackT--;
+  ctx.fillStyle = saved ? PAL.green : PAL.cyan;
+  ctx.fillRect(x, y, w, h);
+  text(saved ? 'SAVED · CAPTION COPIED' : '▦ SHARE SCORE CARD',
+    VIEW_W / 2, y + h / 2 + 3, { size: 8, color: '#06121a', bold: true });
+}
 
 const HINT_MOVE = IS_TOUCH ? '◀ ▶ move · ▲ jump · ✦ query · ▼ ssh tunnel' : '←→ move · SPACE jump · X query · ↓ ssh tunnel · P pause';
 const HINT_MENU = IS_TOUCH ? '▼ select · ▲ confirm' : '↑↓ select · ENTER confirm';
@@ -176,7 +207,9 @@ const HINT_PLAY = IS_TOUCH ? '◀ ▶ move · ▲ jump' : '←→ move · SPACE 
 // ------------------------------------------------------------- share CTA ---
 // Renders a score card image: shared natively where the Web Share API
 // supports files, downloaded (with the caption copied) everywhere else.
-shareBtn?.addEventListener('click', async () => {
+// brief on-canvas feedback after a card is generated (download path)
+let shareFeedbackT = 0;
+async function shareScore() {
   const url = `${URLS.game}?utm_source=share`;
   const text = `I committed ${app.score} points and salvaged ${app.pluginCount()}/${TOTAL_PLUGINS} plugins in TABULARIS RUN ▦ — the platformer from Tabularis, the open-source AI-native database client.\n${url}`;
   try {
@@ -199,11 +232,15 @@ shareBtn?.addEventListener('click', async () => {
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 5000);
       try { await navigator.clipboard.writeText(text); } catch {}
-      shareBtn.textContent = 'image saved + caption copied!';
-      setTimeout(() => (shareBtn.textContent = 'share score card'), 2200);
+      shareFeedbackT = 150; // ~2.5s of "saved!" on the canvas button
+      if (shareBtn) {
+        shareBtn.textContent = 'image saved + caption copied!';
+        setTimeout(() => (shareBtn.textContent = 'share score card'), 2200);
+      }
     }
   } catch {}
-});
+}
+shareBtn?.addEventListener('click', shareScore);
 if (shareBtn) shareBtn.textContent = 'share score card';
 
 // ------------------------------------------------------------ state flow ---
@@ -488,11 +525,12 @@ function drawClear(t) {
 function drawGameOver(t) {
   ctx.fillStyle = PAL.bg;
   ctx.fillRect(0, 0, VIEW_W, VIEW_H);
-  text('FATAL', VIEW_W / 2, 86, { size: 22, color: PAL.red, bold: true });
-  text('connection to server lost', VIEW_W / 2, 108, { size: 9, color: PAL.muted });
-  text(`final score ${app.score} · ${app.rows} rows`, VIEW_W / 2, 134, { size: 9, color: PAL.text });
-  text('the real Tabularis never drops your connection → tabularis.dev', VIEW_W / 2, 158, { size: 7, color: PAL.cyan });
-  if (t > 60 && Math.floor(t / 30) % 2) text('ENTER: reconnect', VIEW_W / 2, 190, { size: 9, color: PAL.green });
+  text('FATAL', VIEW_W / 2, 80, { size: 22, color: PAL.red, bold: true });
+  text('connection to server lost', VIEW_W / 2, 102, { size: 9, color: PAL.muted });
+  text(`final score ${app.score} · ${app.rows} rows`, VIEW_W / 2, 126, { size: 9, color: PAL.text });
+  text('the real Tabularis never drops your connection → tabularis.dev', VIEW_W / 2, 148, { size: 7, color: PAL.cyan });
+  if (t > 60 && Math.floor(t / 30) % 2) text('ENTER: reconnect', VIEW_W / 2, 178, { size: 9, color: PAL.green });
+  drawShareButton(196);
   if (t > 60 && (app.input.pressed.start || app.input.pressed.jump)) {
     app.mapIdx = Math.min(app.gIdx, app.unlocked);
     app.setState('map');
@@ -602,6 +640,10 @@ function loop(now) {
 
 addEventListener('pointerdown', () => app.audio.ensure(), { once: true });
 addEventListener('keydown', () => app.audio.ensure(), { once: true });
+
+// test hook (mirrors ?touch=1): exposes app so end-screen harnesses can
+// jump straight to gameover/victory for screenshots — no effect in normal play
+if (new URLSearchParams(location.search).has('debug')) globalThis.__app = app;
 
 app.setState('title');
 requestAnimationFrame(loop);

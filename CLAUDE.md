@@ -120,6 +120,8 @@ coyote-aware on horizontal levels and switches to a span-climbing strategy on
 vertical ones; it plays in "ghost mode" (immune to enemies, pits still kill)
 so it validates traversability, not combat. Visual checks: screenshot
 `test/shot.html?w=&l=&f=` (gameplay), `test/mapshot.html` (level select),
+`test/endshot.html?state=gameover|victory&debug` (end screens; `?debug`
+exposes `__app` so the harness can jump straight to the state),
 `test/sharecard.html`, `test/og.html`, `test/icon.html`. The headless pattern
 is `chromium --headless=new --no-sandbox --hide-scrollbars
 --virtual-time-budget=N --screenshot=out.png <url>`.

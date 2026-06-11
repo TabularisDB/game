@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<style>
+  body { margin: 0; background: #08090a; }
+  #game { width: 960px; height: 540px; image-rendering: pixelated; display: block; }
+  #cta, #share, #tagline { display: none; }
+</style>
+</head>
+<body>
+  <!-- minimal DOM main.js needs; ?state=gameover|victory&debug exposes __app -->
+  <canvas id="game"></canvas>
+  <div id="cta"></div>
+  <button id="share"></button>
+  <div id="tagline"></div>
+  <script type="module">
+    import '../js/main.js';
+    const q = new URLSearchParams(location.search);
+    const st = q.get('state') || 'gameover';
+    (function go() {
+      const app = window.__app;
+      if (!app) { requestAnimationFrame(go); return; }
+      app.score = 24850; app.rows = 73;
+      app.setState(st);
+      console.log('END SCREEN READY: ' + st);
+    })();
+  </script>
+</body>
+</html>
