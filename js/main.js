@@ -490,6 +490,12 @@ function drawPlay() {
     text(HINT_PLAY, game.player.x - game.cam.x, 200, { size: 7, color: PAL.muted });
     ctx.globalAlpha = 1;
   }
+  // contextual hint when standing on a climbable cable
+  if (app.state === 'play' && !game.player.climbing && game.climbAt(game.player)) {
+    const sx = game.player.x + game.player.w / 2 - game.cam.x;
+    const sy = game.player.y - game.cam.y - 8;
+    text(IS_TOUCH ? '▲ ▼ climb' : '↑ ↓ climb', sx, sy, { size: 7, color: PAL.cyan });
+  }
 
   if (app.deathT >= 0 && ++app.deathT > 110) {
     app.lives--;
@@ -612,6 +618,7 @@ function drawControls() {
   col(34, 'KEYBOARD', [
     ['←→ / A D', 'move'],
     ['SPACE / Z / ↑', 'jump'],
+    ['↑ ↓ on a cable', 'climb'],
     ['X / CTRL', 'shoot query'],
     ['↓', 'enter ssh tunnel'],
     ['P / ESC', 'pause'],
@@ -620,13 +627,14 @@ function drawControls() {
   col(262, 'GAMEPAD', [
     ['stick / d-pad', 'move'],
     ['A / Y', 'jump'],
+    ['▲ ▼ on a cable', 'climb'],
     ['B / X', 'shoot query'],
     ['d-pad ▼', 'enter ssh tunnel'],
     ['START', 'pause / confirm'],
     ['SELECT', 'sound on/off'],
   ], PAL.violet);
 
-  text('TOUCH (mobile): ◀ ▼ ▶ d-pad · ▲ jump · ✦ shoot · ▼ tunnel', VIEW_W / 2, 188, { size: 7, color: PAL.muted });
+  text('TOUCH (mobile): ◀ ▲ ▼ ▶ d-pad (▲▼ climb) · ▲ jump · ✦ shoot · ▼ tunnel', VIEW_W / 2, 196, { size: 7, color: PAL.muted });
   text(
     app.input.gamepadActive ? '● gamepad connected' : '○ no gamepad detected — press any button on it',
     VIEW_W / 2, 210,

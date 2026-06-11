@@ -1,7 +1,7 @@
 // Core engine: level loading, tile collisions, entity interactions, camera,
 // rendering. The app (main.js) owns meta-state: lives, score, screens.
 
-import { TILE, VIEW_W, VIEW_H, SOLID, ONEWAY, WORLDS } from './constants.js';
+import { TILE, VIEW_W, VIEW_H, SOLID, ONEWAY, CLIMB, WORLDS } from './constants.js';
 import { LEVELS } from './levels.js';
 import {
   Player, Blob, Snail, Wisp, Drone, Daemon, LockGate, Boss,
@@ -95,6 +95,17 @@ export class Game {
     if (SOLID.has(this.map[ty][tx])) return true;
     for (const l of this.locks) {
       if (l.closed && l.tx === tx && l.ty === ty) return true;
+    }
+    return false;
+  }
+
+  // Is the entity's center column overlapping a climbable cable tile?
+  climbAt(e) {
+    const cx = Math.floor((e.x + e.w / 2) / T);
+    const y0 = Math.floor(e.y / T);
+    const y1 = Math.floor((e.y + e.h - 1) / T);
+    for (let ty = y0; ty <= y1; ty++) {
+      if (CLIMB.has(this.tileAt(cx, ty))) return true;
     }
     return false;
   }
@@ -644,6 +655,7 @@ export class Game {
             break;
           }
           case '=': ctx.drawImage(tset.platform, px, py); break;
+          case 'H': ctx.drawImage(tset.cable, px, py); break;
           case '^': ctx.drawImage(S.spike, px, py); break;
           case 'T': ctx.drawImage(S.tunnelTop, px, py); break;
           case '|': ctx.drawImage(S.tunnelBody, px, py); break;

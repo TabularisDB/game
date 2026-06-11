@@ -41,7 +41,7 @@ export class Input {
 
     // Touch buttons (present in index.html, shown on coarse pointers)
     for (const [id, action] of [
-      ['tb-left', 'left'], ['tb-right', 'right'], ['tb-down', 'down'],
+      ['tb-left', 'left'], ['tb-right', 'right'], ['tb-down', 'down'], ['tb-up', 'up'],
       ['tb-jump', 'jump'], ['tb-fire', 'fire'], ['tb-pause', 'pause'],
     ]) {
       const el = document.getElementById(id);

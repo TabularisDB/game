@@ -14,6 +14,7 @@ export const PLAYER = {
   FRICTION: 0.8,
   JUMP_V: -6.7, JUMP_V_INDEX: -7.1,
   JUMP_CUT: 0.45,
+  CLIMB_SPD: 1.4,
   COYOTE: 6, JBUF: 7,
   STOMP_BOUNCE: -4.2,
   INVULN: 100,
@@ -67,5 +68,7 @@ export const WORLDS = [
 export const SOLID = new Set(['#', 'B', 'b', '|', 'T', '?', 'I', 'M', 'R']);
 // One-way platform
 export const ONEWAY = '=';
+// Climbable data cables: not solid, but hold Up/Down to ride them vertically
+export const CLIMB = new Set(['H']);
 
 export const SAVE_KEY = 'tabularis-run-v1';

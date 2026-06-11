@@ -83,6 +83,7 @@ test/             validators (node) + browser harnesses (chromium headless)
 
 ```
 '#' ground   'B' brick   'b' used block   '=' one-way platform   '^' spikes
+'H' climbable cable (hold Up/Down to climb; jump key detaches)
 '?' coin block   'I' index block   'M' mcp block   'R' vertical-scaling block
 'T' ssh tunnel top (warp)  '|' tunnel body   'o' coin   'F' commit flag
 'K' BEGIN checkpoint   'S' start   'D' boss spawn   'p' hidden plugin

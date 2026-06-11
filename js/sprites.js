@@ -472,6 +472,23 @@ function spikeTile() {
   ctx.fillRect(0, 14, 16, 2);
   return cv;
 }
+// Climbable data cable: twin rails + glowing rungs, transparent elsewhere so it
+// overlays the background. Accent-tinted per world.
+function cableTile(world) {
+  const cv = document.createElement('canvas');
+  cv.width = TILE; cv.height = TILE;
+  const ctx = cv.getContext('2d');
+  ctx.fillStyle = world.accent;
+  ctx.globalAlpha = 0.85;
+  ctx.fillRect(4, 0, 2, 16);
+  ctx.fillRect(10, 0, 2, 16);
+  ctx.globalAlpha = 0.5;
+  for (let y = 1; y < 16; y += 5) ctx.fillRect(4, y, 8, 2);  // rungs
+  ctx.globalAlpha = 0.9;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(5, 3, 1, 1); ctx.fillRect(10, 11, 1, 1);      // signal dots
+  return cv;
+}
 function platformTile(world) {
   const cv = document.createElement('canvas');
   cv.width = TILE; cv.height = TILE;
@@ -557,6 +574,7 @@ export function buildSprites() {
       ground: groundTile(w),
       brick: brickTile(w),
       platform: platformTile(w),
+      cable: cableTile(w),
     })),
   };
   return S;

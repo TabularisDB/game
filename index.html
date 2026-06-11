@@ -126,6 +126,15 @@
       z-index: 5;
     }
     #touch .pad { display: flex; gap: 10px; pointer-events: auto; }
+    #touch .dpad {
+      display: grid; gap: 6px;
+      grid-template-columns: repeat(3, 62px);
+      grid-template-rows: repeat(2, 62px);
+    }
+    #tb-up { grid-column: 2; grid-row: 1; }
+    #tb-left { grid-column: 1; grid-row: 2; }
+    #tb-down { grid-column: 2; grid-row: 2; }
+    #tb-right { grid-column: 3; grid-row: 2; }
     #touch button {
       width: 62px; height: 62px;
       border-radius: 50%;
@@ -348,7 +357,8 @@
   </div>
 
   <div id="touch">
-    <div class="pad">
+    <div class="pad dpad">
+      <button id="tb-up">▲</button>
       <button id="tb-left">◀</button>
       <button id="tb-down">▼</button>
       <button id="tb-right">▶</button>

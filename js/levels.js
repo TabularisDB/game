@@ -2,7 +2,7 @@
 // stay exact. Tile legend:
 //   '#' ground   'B' brick      'b' used block   '?' coin block
 //   'I' index block  'M' mcp block  'R' vertical-scaling block  '=' one-way platform
-//   '^' spikes   'T' ssh tunnel top  '|' tunnel body
+//   '^' spikes   'T' ssh tunnel top  '|' tunnel body   'H' climbable cable
 //   'o' coin (data row)  'F' commit flag  'K' BEGIN checkpoint  'S' start
 //   enemies: 'g' corrupt blob  's' slow query  'f' null wisp  'l' lock gate
 //   'D' boss spawn   'p' hidden plugin pickup
@@ -22,6 +22,7 @@ function make(w, h = 16) {
     spikes(x0, x1, y = 13) { this.hr(x0, x1, y, '^'); },
     tunnel(x, top = 12, base = 13) { this.set(x, top, 'T'); this.vr(x, top + 1, base, '|'); },
     lockGate(x, wallTop = 8) { this.vr(x, wallTop, 12, 'B'); this.set(x, 13, 'l'); },
+    climb(x, y0, y1 = 13) { this.vr(x, y0, y1, 'H'); },
     rows() { return g.map(r => r.join('')); },
   };
 }
@@ -52,6 +53,8 @@ function w1l1() {
   a.hr(60, 62, 11, 'o');
   a.stairsUp(70, 4); a.stairsDown(76, 4);
   a.set(88, 10, '?');
+  // climbable data cable topping out beside a one-way ledge with a coin stash
+  a.climb(85, 3, 13); a.hr(86, 90, 3, '='); a.hr(86, 90, 2, 'o');
   a.set(92, 13, 'g');
   a.hr(99, 100, 11, '=');
   a.set(108, 13, 'g'); a.set(111, 13, 'g');
@@ -167,6 +170,8 @@ function w2l1() {
   a.spikes(106, 108);
   a.set(102, 6, 'w');
   a.set(114, 13, 's'); a.set(117, 8, 'f');
+  // climbable data cable topping out beside a one-way ledge with a coin stash
+  a.climb(110, 3, 13); a.hr(111, 115, 3, '='); a.hr(111, 115, 2, 'o');
   a.stairsUp(122, 4); a.stairsDown(127, 4);
   a.hr(135, 136, 11, '=');
   a.set(144, 13, 'g'); a.set(146, 13, 'g');
@@ -272,6 +277,8 @@ function w3l1() {
   a.hr(35, 36, 11, '=');
   a.set(42, 13, 's'); a.set(45, 13, 's');
   a.set(44, 6, 'w');
+  // climbable data cable topping out beside a one-way ledge with a coin stash
+  a.climb(46, 3, 13); a.hr(47, 51, 3, '='); a.hr(47, 51, 2, 'o');
   a.lockGate(52);
   a.hr(61, 63, 11, '=');
   a.set(70, 8, 'f'); a.set(73, 13, 'g');

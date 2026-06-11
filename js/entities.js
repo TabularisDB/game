@@ -34,6 +34,7 @@ export class Player {
     this.dead = false; this.deadT = 0;
     this.anim = 0;
     this.squash = 0;
+    this.climbing = false; // riding a data cable
     this.frozen = false; // warps / level clear
   }
 
@@ -52,20 +53,45 @@ export class Player {
     else if (inp.held.right) { this.vx = Math.min(this.vx + acc, maxSpd); this.face = 1; }
     else if (this.onGround) { this.vx *= PLAYER.FRICTION; if (Math.abs(this.vx) < 0.05) this.vx = 0; }
 
-    if (inp.pressed.jump) this.jbuf = PLAYER.JBUF;
-    if (this.jbuf > 0 && this.coyote > 0) {
-      this.vy = this.hasIndex ? PLAYER.JUMP_V_INDEX : PLAYER.JUMP_V;
+    // climbing data cables: grab on with Up/Down, ride with held Up/Down.
+    // ArrowUp also emits "jump", so only a dedicated jump key leaps off.
+    const onCable = g.climbAt(this);
+    if (!onCable) this.climbing = false;
+    else if (inp.pressed.up || inp.pressed.down) this.climbing = true;
+    if (this.climbing && inp.pressed.jump && !inp.pressed.up) {
+      this.climbing = false;
+      this.vy = PLAYER.JUMP_V * 0.72;
       this.coyote = 0; this.jbuf = 0;
       g.app.audio.jump();
     }
-    if (this.jbuf > 0) this.jbuf--;
-    if (!inp.held.jump && this.vy < -2.4) this.vy = -2.4;
+
+    if (!this.climbing) {
+      if (inp.pressed.jump) this.jbuf = PLAYER.JBUF;
+      if (this.jbuf > 0 && this.coyote > 0) {
+        this.vy = this.hasIndex ? PLAYER.JUMP_V_INDEX : PLAYER.JUMP_V;
+        this.coyote = 0; this.jbuf = 0;
+        g.app.audio.jump();
+      }
+      if (this.jbuf > 0) this.jbuf--;
+      if (!inp.held.jump && this.vy < -2.4) this.vy = -2.4;
+    }
 
     const vyBefore = this.vy;
     const wasGround = this.onGround;
-    this.vy = Math.min(this.vy + GRAVITY, MAX_FALL);
+    if (this.climbing) {
+      const cs = PLAYER.CLIMB_SPD;
+      this.vy = (inp.held.down ? cs : 0) - (inp.held.up ? cs : 0);
+      if (!inp.held.left && !inp.held.right) {
+        this.vx = 0; // settle onto the cable's column
+        const cc = (Math.floor((this.x + this.w / 2) / TILE) + 0.5) * TILE - (this.x + this.w / 2);
+        if (Math.abs(cc) > 0.4) this.x += Math.sign(cc) * Math.min(0.8, Math.abs(cc));
+      }
+      this.anim += 3;
+    } else {
+      this.vy = Math.min(this.vy + GRAVITY, MAX_FALL);
+    }
     g.moveEntity(this, true);
-    this.coyote = this.onGround ? PLAYER.COYOTE : Math.max(0, this.coyote - 1);
+    this.coyote = this.climbing ? 0 : (this.onGround ? PLAYER.COYOTE : Math.max(0, this.coyote - 1));
 
     // game feel: landing squash + dust, run dust
     if (!wasGround && this.onGround && vyBefore > 3.4) {
@@ -133,7 +159,8 @@ export class Player {
     if (this.inv > 0 && this.inv % 6 < 3 && !this.dead) return;
     const S = g.app.sprites.player;
     let img = S.idle;
-    if (!this.onGround) img = S.jump;
+    if (this.climbing) img = Math.floor(this.anim / 6) % 2 ? S.run1 : S.run2;
+    else if (!this.onGround) img = S.jump;
     else if (Math.abs(this.vx) > 0.3) img = Math.floor(this.anim / 4) % 2 ? S.run1 : S.run2;
     const dx = this.x + this.w / 2 - 8;
     const dy = this.y + this.h - 14;
