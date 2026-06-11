@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<style>html,body{margin:0;padding:0;overflow:hidden}canvas{display:block}</style>
+</head>
+<body>
+<canvas id="og" width="1200" height="630"></canvas>
+<script type="module">
+import { buildSprites, drawLogoCube } from '../js/sprites.js';
+import { WORLDS } from '../js/constants.js';
+
+const ctx = document.getElementById('og').getContext('2d');
+ctx.imageSmoothingEnabled = false;
+const S = buildSprites();
+
+// background
+ctx.fillStyle = '#08090a';
+ctx.fillRect(0, 0, 1200, 630);
+ctx.save();
+ctx.globalAlpha = 0.05;
+ctx.strokeStyle = '#22d3ee';
+ctx.beginPath();
+for (let x = 0; x < 1200; x += 60) { ctx.moveTo(x, 0); ctx.lineTo(x, 630); }
+for (let y = 0; y < 630; y += 60) { ctx.moveTo(0, y); ctx.lineTo(1200, y); }
+ctx.stroke();
+ctx.restore();
+const glow = ctx.createRadialGradient(600, 240, 0, 600, 240, 480);
+glow.addColorStop(0, 'rgba(59,130,246,0.16)');
+glow.addColorStop(1, 'rgba(59,130,246,0)');
+ctx.fillStyle = glow;
+ctx.fillRect(0, 0, 1200, 630);
+
+// logo + copy
+drawLogoCube(ctx, 600, 110, 64, 10);
+ctx.textAlign = 'center';
+ctx.textBaseline = 'middle';
+ctx.fillStyle = '#ffffff';
+ctx.font = 'bold 78px "JetBrains Mono", monospace';
+ctx.fillText('TABULARIS RUN', 600, 248);
+ctx.fillStyle = '#9ca3af';
+ctx.font = '25px "JetBrains Mono", monospace';
+ctx.fillText('Stomp corrupted data. Outrun slow queries. Ship the COMMIT.', 600, 312);
+ctx.fillStyle = '#22d3ee';
+ctx.font = '23px "JetBrains Mono", monospace';
+ctx.fillText('a free browser platformer · SQLITE → MYSQL → POSTGRESQL', 600, 352);
+ctx.fillStyle = '#34d399';
+ctx.font = 'bold 22px "JetBrains Mono", monospace';
+ctx.fillText('▶ game.tabularis.dev', 600, 398);
+
+// ground strip + cast
+const G = 48; // tile scale 3x
+for (let r = 0; r < 2; r++) {
+  for (let i = 0; i < 25; i++) {
+    ctx.drawImage(S.tiles[0].ground, i * G, 630 - G * 2 + r * G, G, G);
+  }
+}
+const ground = 630 - G * 2;
+const put = (img, x, scale, lift = 0) =>
+  ctx.drawImage(img, x, ground - img.height * scale - lift, img.width * scale, img.height * scale);
+
+put(S.player.run1, 130, 5);
+put(S.blob[0], 320, 4);
+put(S.coin, 395, 3, 80);
+put(S.qblock, 470, 4, 55);
+put(S.snail[0], 620, 4);
+put(S.wisp[0], 780, 4, 45);
+put(S.plugin, 950, 4, 75);
+put(S.boss.red, 1020, 6);
+
+console.log('OG READY');
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+# dependencies (none are needed — package.json exists only for "type": "module")
+node_modules/
+pnpm-lock.yaml
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.log
+
+# local tool state
+.claude/settings.local.json

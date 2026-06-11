@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#08090a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>Tabularis Run — a platformer by Tabularis</title>
+  <meta name="description" content="Run, jump and COMMIT your way through SQLite, MySQL and PostgreSQL. A free browser platformer from Tabularis, the open-source AI-native database client.">
+  <link rel="canonical" href="https://game.tabularis.dev/">
+
+  <!-- social cards -->
+  <meta property="og:title" content="Tabularis Run — defeat The Deadlock">
+  <meta property="og:description" content="A free Super Mario-style browser game from Tabularis, the open-source database client built for the AI era. Stomp corrupted data, grab indexes, ship the COMMIT.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://game.tabularis.dev/">
+  <meta property="og:image" content="https://game.tabularis.dev/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Tabularis Run — defeat The Deadlock">
+  <meta name="twitter:description" content="A free browser platformer from the open-source AI-native database client. Can you COMMIT all three worlds?">
+  <meta name="twitter:image" content="https://game.tabularis.dev/og.png">
+
+  <style>
+    :root {
+      --bg: #08090a;
+      --border: #1f2937;
+      --text: #d1d5db;
+      --muted: #9ca3af;
+      --blue: #3b82f6;
+      --cyan: #22d3ee;
+      --green: #10b981;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "JetBrains Mono", "Fira Code", monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      overflow: hidden;
+      touch-action: none;
+    }
+    #stage {
+      position: relative;
+      width: min(96vw, calc((100vh - 70px) * 16 / 9));
+      aspect-ratio: 16 / 9;
+    }
+    @supports (height: 100dvh) {
+      #stage { width: min(96vw, calc((100dvh - 70px) * 16 / 9)); }
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--bg);
+      box-shadow: 0 0 60px rgba(59, 130, 246, 0.12);
+    }
+    #cta {
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      font-size: 12px;
+    }
+    #cta[hidden] { display: none; }
+    #cta a, #cta button {
+      color: var(--cyan);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      background: #111214;
+      padding: 5px 12px;
+      border-radius: 5px;
+      font: inherit;
+      cursor: pointer;
+      transition: border-color .15s, color .15s;
+    }
+    #cta a:hover, #cta button:hover { border-color: var(--blue); color: #fff; }
+    #cta .star { color: #f59e0b; }
+    #tagline {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: center;
+    }
+    #tagline a { color: var(--cyan); text-decoration: none; }
+
+    /* touch controls — styled always, shown on coarse pointers
+       (body.force-touch is the test hook: index.html?touch=1) */
+    #touch, #sysbtns, #rotate { display: none; }
+    #touch {
+      position: fixed;
+      inset: auto 0 0 0;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 0 12px calc(12px + env(safe-area-inset-bottom, 0px));
+      pointer-events: none;
+      z-index: 5;
+    }
+    #touch .pad { display: flex; gap: 10px; pointer-events: auto; }
+    #touch button {
+      width: 62px; height: 62px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: rgba(17, 18, 20, 0.72);
+      color: var(--text);
+      font-size: 22px;
+      font-family: inherit;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: none;
+    }
+    #touch button:active { border-color: var(--cyan); color: var(--cyan); }
+    #sysbtns {
+      position: fixed;
+      top: calc(8px + env(safe-area-inset-top, 0px));
+      right: calc(8px + env(safe-area-inset-right, 0px));
+      gap: 8px;
+      z-index: 5;
+    }
+    #sysbtns button {
+      width: 40px; height: 40px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: rgba(17, 18, 20, 0.72);
+      color: var(--muted);
+      font-size: 16px;
+      font-family: inherit;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+    #rotate {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      background: #08090a;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      color: var(--text);
+      font-size: 15px;
+      text-align: center;
+    }
+    #rotate .icon { font-size: 44px; animation: spin 2s ease-in-out infinite; }
+    @keyframes spin {
+      0%, 60%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(-90deg); }
+    }
+    /* on touch: edge-to-edge canvas (full height, no chrome), floating CTA */
+    @media (pointer: coarse) {
+      #touch, #sysbtns { display: flex; }
+      #tagline { display: none; }
+      body { gap: 0; }
+      #stage { width: min(100vw, calc(100vh * 16 / 9)); }
+      @supports (height: 100dvh) {
+        #stage { width: min(100vw, calc(100dvh * 16 / 9)); }
+      }
+      canvas { border: 0; border-radius: 0; box-shadow: none; }
+      #sysbtns { flex-direction: column; }
+      #cta {
+        position: fixed;
+        bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 6;
+        font-size: 11px;
+        gap: 8px;
+        white-space: nowrap;
+      }
+    }
+    @media (pointer: coarse) and (orientation: portrait) {
+      #rotate { display: flex; }
+    }
+    @media (pointer: coarse) and (max-width: 819px) {
+      .cta-site { display: none; }
+    }
+    body.force-touch #touch { display: flex; }
+    body.force-touch #sysbtns { display: flex; flex-direction: column; }
+    body.force-touch #tagline { display: none; }
+    body.force-touch { gap: 0; }
+    body.force-touch #stage { width: min(100vw, calc(100vh * 16 / 9)); }
+    body.force-touch canvas { border: 0; border-radius: 0; box-shadow: none; }
+    body.force-touch #cta {
+      position: fixed;
+      bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 6;
+      font-size: 11px;
+      gap: 8px;
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <canvas id="game"></canvas>
+  </div>
+
+  <div id="cta" hidden>
+    <a class="cta-site" href="https://tabularis.dev?utm_source=tabularis-run&utm_medium=game" target="_blank" rel="noopener">tabularis.dev</a>
+    <a href="https://github.com/TabularisDB/tabularis" target="_blank" rel="noopener"><span class="star">★</span> star on GitHub</a>
+    <button id="share">share score</button>
+  </div>
+
+  <div id="tagline">
+    TABULARIS RUN · made with ❤ by <a href="https://tabularis.dev?utm_source=tabularis-run" target="_blank" rel="noopener">Tabularis</a> — the open-source database client for the AI era
+  </div>
+
+  <div id="rotate">
+    <div class="icon">⟳</div>
+    <div>ruota il dispositivo<br><span style="color:#9ca3af">rotate your device to play</span></div>
+  </div>
+
+  <div id="sysbtns">
+    <button id="tb-pause" aria-label="pause">II</button>
+    <button id="tb-fs" aria-label="fullscreen">⛶</button>
+  </div>
+
+  <div id="touch">
+    <div class="pad">
+      <button id="tb-left">◀</button>
+      <button id="tb-down">▼</button>
+      <button id="tb-right">▶</button>
+    </div>
+    <div class="pad">
+      <button id="tb-fire">✦</button>
+      <button id="tb-jump">▲</button>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

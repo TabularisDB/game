@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<style>html,body{margin:0;padding:0;overflow:hidden;background:#08090a}canvas{display:block;width:100vw;height:100vh}</style>
+</head>
+<body>
+<canvas id="icon" width="512" height="512"></canvas>
+<script type="module">
+import { drawLogoCube } from '../js/sprites.js';
+const ctx = document.getElementById('icon').getContext('2d');
+ctx.fillStyle = '#08090a';
+ctx.fillRect(0, 0, 512, 512);
+const glow = ctx.createRadialGradient(256, 256, 0, 256, 256, 256);
+glow.addColorStop(0, 'rgba(59,130,246,0.25)');
+glow.addColorStop(1, 'rgba(59,130,246,0)');
+ctx.fillStyle = glow;
+ctx.fillRect(0, 0, 512, 512);
+drawLogoCube(ctx, 256, 250, 130, 10);
+console.log('ICON READY');
+</script>
+</body>
+</html>

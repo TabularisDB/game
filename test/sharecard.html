@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<style>html,body{margin:0;padding:0;overflow:hidden}canvas{display:block}</style>
+</head>
+<body>
+<script type="module">
+import { buildShareCard } from '../js/sharecard.js';
+import { buildSprites } from '../js/sprites.js';
+
+const cv = buildShareCard({
+  score: 48230, rows: 312, plugins: 19, totalPlugins: 27,
+  unlocked: 9, totalLevels: 12,
+}, buildSprites());
+document.body.appendChild(cv);
+console.log('CARD READY');
+</script>
+</body>
+</html>

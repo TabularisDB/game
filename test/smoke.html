@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>smoke</title></head>
+<body>
+<canvas id="game"></canvas>
+<script type="module">
+import { Game } from '../js/game.js';
+import { buildSprites } from '../js/sprites.js';
+import { AudioSys } from '../js/audio.js';
+import { LEVELS } from '../js/levels.js';
+
+window.onerror = (m, s, l, c, e) => console.log('PAGEERROR: ' + m + ' @' + s + ':' + l);
+
+const canvas = document.getElementById('game');
+canvas.width = 480; canvas.height = 270;
+const ctx = canvas.getContext('2d');
+
+const app = {
+  input: { held: {}, pressed: {} },
+  audio: new AudioSys(),
+  sprites: buildSprites(),
+  rows: 0, score: 0, lives: 3,
+  dead: false, cleared: false,
+  addRows(n) { this.rows += n; },
+  addScore(n) { this.score += n; },
+  setCheckpoint() {},
+  onPlayerDead() { this.dead = true; },
+  onLevelClear() { this.cleared = true; },
+};
+
+const game = new Game(app);
+
+for (let wi = 0; wi < LEVELS.length; wi++) {
+  for (let li = 0; li < LEVELS[wi].length; li++) {
+    try {
+      app.dead = false; app.cleared = false;
+      game.loadLevel(wi, li, null);
+      // ghost mode: immune to enemies/spikes (bot has no combat skill) but
+      // pit deaths still count — they signal broken geometry.
+      game.player.hurt = () => {};
+      if (game.isBossLevel) game.bossDead = true;
+      let frames = 0;
+      let maxX = 0;
+      app.input.held = { right: true };
+      while (!app.cleared && !app.dead && frames < 60 * 150) {
+        frames++;
+        const p = game.player;
+        if (game.isVertical) {
+          // climbing bot: head for the overlap with the nearest span above,
+          // then jump up through it (platforms are one-way)
+          const fr = Math.floor((p.y + p.h + 1) / 16);
+          let best = null;
+          for (let r = fr - 1; r >= Math.max(0, fr - 4); r--) {
+            for (let c = 0; c < game.W; c++) {
+              const ch = game.tileAt(c, r);
+              if (ch !== '=' && ch !== '#') continue;
+              let c1 = c;
+              while (c1 + 1 < game.W && ['=', '#'].includes(game.tileAt(c1 + 1, r))) c1++;
+              const tgt = Math.max(c * 16 + 8, Math.min(p.x, c1 * 16 - 8));
+              const dist = Math.abs(tgt - p.x);
+              if (!best || dist < best.dist) best = { tgt, dist };
+              c = c1;
+            }
+            if (best) break;
+          }
+          const flag = game.flags[0];
+          const tgt = best ? best.tgt : flag[0] * 16;
+          app.input.held = {
+            left: tgt < p.x - 3, right: tgt > p.x + 3,
+            jump: !p.onGround || Math.abs(tgt - p.x) < 24,
+          };
+          app.input.pressed = (p.onGround && Math.abs(tgt - p.x) < 24) ? { jump: true } : {};
+          game.update();
+          if (frames % 12 === 0) game.draw(ctx);
+          maxX = Math.max(maxX, p.x);
+          continue;
+        }
+        // edge-aware: jump when the ground ahead runs out, when stuck
+        // against a wall, or periodically (to clear blocks/enemies paths)
+        const tx = Math.floor((p.x + p.w + 5) / 16);
+        const fy = Math.floor((p.y + p.h + 2) / 16);
+        let support = false;
+        for (let dy = 0; dy < 3; dy++) {
+          if (game.solidAt(tx, fy + dy) || game.tileAt(tx, fy + dy) === '=') support = true;
+        }
+        const canJump = p.onGround || p.coyote > 0;
+        const nearEdge = !support;
+        const stuck = p.onGround && Math.abs(p.vx) < 0.2;
+        // don't waste the periodic hop if a pit is coming up — save the
+        // jump for the edge, like a human would
+        let runway = true;
+        const ptx0 = Math.floor((p.x + p.w) / 16);
+        for (let k = 1; k <= 5 && runway; k++) {
+          let s = false;
+          for (let yy = fy; yy <= 15; yy++) {
+            if (game.solidAt(ptx0 + k, yy) || game.tileAt(ptx0 + k, yy) === '=') s = true;
+          }
+          if (!s) runway = false;
+        }
+        const wantJump = nearEdge || stuck || (frames % 90 === 0 && runway);
+        app.input.pressed = (wantJump && canJump) ? { jump: true } : {};
+        app.input.held.jump = wantJump || !p.onGround;
+        game.update();
+        if (frames % 12 === 0) game.draw(ctx);
+        maxX = Math.max(maxX, p.x);
+      }
+      const pct = Math.round((maxX / (game.W * 16)) * 100);
+      const px = Math.round(game.player.x / 16), py = Math.round(game.player.y / 16);
+      console.log(`LEVEL ${wi + 1}-${li + 1}: ${app.cleared ? 'CLEARED' : app.dead ? 'died' : 'timeout'} f=${frames} progress=${pct}% at tile(${px},${py})`);
+    } catch (e) {
+      console.log(`LEVEL ${wi + 1}-${li + 1} ERROR: ${e.stack || e}`);
+    }
+  }
+}
+console.log('SMOKE DONE');
+</script>
+</body>
+</html>

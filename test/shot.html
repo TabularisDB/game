@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<style>body{margin:0;background:#08090a}canvas{width:960px;height:540px;image-rendering:pixelated}</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<script type="module">
+import { Game } from '../js/game.js';
+import { buildSprites } from '../js/sprites.js';
+import { AudioSys } from '../js/audio.js';
+
+const canvas = document.getElementById('game');
+canvas.width = 480; canvas.height = 270;
+const ctx = canvas.getContext('2d');
+ctx.imageSmoothingEnabled = false;
+
+const q = new URLSearchParams(location.search);
+const wi = +(q.get('w') || 0), li = +(q.get('l') || 0), run = +(q.get('f') || 240);
+
+const app = {
+  input: { held: { right: true }, pressed: {} },
+  audio: new AudioSys(),
+  sprites: buildSprites(),
+  rows: 0, score: 0,
+  addRows(n) { this.rows += n; }, addScore(n) { this.score += n; },
+  setCheckpoint() {}, onPlayerDead() {}, onLevelClear() {},
+};
+const game = new Game(app);
+game.loadLevel(wi, li, null);
+game.player.hurt = () => {};
+for (let f = 0; f < run; f++) {
+  app.input.pressed = (f % 45 === 0) ? { jump: true } : {};
+  app.input.held.jump = (f % 45) < 18;
+  game.update();
+}
+game.draw(ctx);
+console.log('SHOT READY');
+</script>
+</body>
+</html>

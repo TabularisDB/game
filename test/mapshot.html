@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8">
+<style>body{margin:0;background:#08090a}canvas{width:960px;height:540px;image-rendering:pixelated}</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="cta" hidden><button id="share"></button></div>
+<script type="module">
+// seed a mid-game save, then drive the title menu down to SELECT TABLE
+localStorage.setItem('tabularis-run-v1', JSON.stringify({
+  v: 2,
+  unlocked: 6,
+  stats: {
+    '0-0': { best: 4980, plugins: [true, true, false] },
+    '0-1': { best: 6120, plugins: [true, false, false] },
+    '0-2': { best: 7300, plugins: [true, true, true] },
+    '0-3': { best: 1500, plugins: [false, false, false] },
+    '1-0': { best: 5900, plugins: [false, true, false] },
+    '1-1': { best: 8230, plugins: [true, false, true] },
+  },
+}));
+await import('../js/main.js');
+const key = (code) => {
+  dispatchEvent(new KeyboardEvent('keydown', { code, bubbles: true }));
+  setTimeout(() => dispatchEvent(new KeyboardEvent('keyup', { code, bubbles: true })), 40);
+};
+setTimeout(() => key('ArrowDown'), 400);   // select SELECT TABLE
+setTimeout(() => key('Enter'), 700);       // open map
+setTimeout(() => key('ArrowRight'), 1000); // move selection
+setTimeout(() => console.log('MAP READY'), 1400);
+</script>
+</body>
+</html>

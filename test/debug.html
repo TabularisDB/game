@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body>
+<canvas id="game"></canvas>
+<script type="module">
+import { Game } from '../js/game.js';
+import { buildSprites } from '../js/sprites.js';
+import { AudioSys } from '../js/audio.js';
+
+window.onerror = (m, s, l) => console.log('PAGEERROR: ' + m + ' @' + l);
+const canvas = document.getElementById('game');
+canvas.width = 480; canvas.height = 270;
+
+const app = {
+  input: { held: {}, pressed: {} },
+  audio: new AudioSys(),
+  sprites: buildSprites(),
+  rows: 0, score: 0,
+  dead: false, cleared: false,
+  addRows() {}, addScore() {}, setCheckpoint() {},
+  onPlayerDead() { this.dead = true; },
+  onLevelClear() { this.cleared = true; },
+};
+const game = new Game(app);
+
+// [world, level, logFromTile, logToTile]
+const cases = [[2, 0, 40, 70]];
+for (const [wi, li, lx0, lx1] of cases) {
+  app.dead = false; app.cleared = false;
+  game.loadLevel(wi, li, null);
+  game.player.hurt = () => {};
+  if (game.isBossLevel) game.bossDead = true;
+  let frames = 0, lastGround = true;
+  app.input.held = { right: true };
+  console.log(`--- ${wi + 1}-${li + 1} ---`);
+  while (!app.cleared && !app.dead && frames < 60 * 150) {
+    frames++;
+    const p = game.player;
+    const tx = Math.floor((p.x + p.w + 5) / 16);
+    const fy = Math.floor((p.y + p.h + 2) / 16);
+    let support = false;
+    for (let dy = 0; dy < 3; dy++) {
+      if (game.solidAt(tx, fy + dy) || game.tileAt(tx, fy + dy) === '=') support = true;
+    }
+    const canJump = p.onGround || p.coyote > 0;
+    const nearEdge = !support;
+    const stuck = p.onGround && Math.abs(p.vx) < 0.2;
+    const wantJump = nearEdge || stuck || frames % 90 === 0;
+    app.input.pressed = (wantJump && canJump) ? { jump: true } : {};
+    app.input.held.jump = wantJump || !p.onGround;
+    const ptx = p.x / 16;
+    if (ptx > lx0 && ptx < lx1) {
+      if (app.input.pressed.jump) console.log(`f${frames} JUMP at x=${ptx.toFixed(1)} y=${(p.y / 16).toFixed(1)} vx=${p.vx.toFixed(2)}`);
+      if (p.onGround !== lastGround) console.log(`f${frames} ${p.onGround ? 'LAND' : 'air'} x=${ptx.toFixed(1)} y=${(p.y / 16).toFixed(1)}`);
+    }
+    lastGround = p.onGround;
+    game.update();
+  }
+  const p = game.player;
+  console.log(`${wi + 1}-${li + 1}: ${app.cleared ? 'CLEARED' : app.dead ? 'DIED' : 'timeout'} at x=${(p.x / 16).toFixed(1)} y=${(p.y / 16).toFixed(1)}`);
+}
+console.log('DEBUG DONE');
+</script>
+</body>
+</html>
