@@ -8,6 +8,7 @@ import { AudioSys } from './audio.js';
 import { Input } from './input.js';
 import { Game } from './game.js';
 import { buildShareCard } from './sharecard.js';
+import { initConsent } from './analytics.js';
 
 const TOTAL_LEVELS = 12;
 const TOTAL_PLUGINS = 27;
@@ -647,3 +648,6 @@ if (new URLSearchParams(location.search).has('debug')) globalThis.__app = app;
 
 app.setState('title');
 requestAnimationFrame(loop);
+
+// ask for analytics consent (no-op unless a Matomo tracker is configured)
+initConsent();

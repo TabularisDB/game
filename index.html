@@ -221,6 +221,60 @@
       gap: 8px;
       white-space: nowrap;
     }
+
+    /* analytics consent modal — shown only when a tracker is configured */
+    #consent {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: rgba(8, 9, 10, 0.88);
+    }
+    #consent[hidden] { display: none; }
+    #consent .card {
+      max-width: 380px;
+      background: #111214;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 22px;
+      text-align: center;
+      box-shadow: 0 0 60px rgba(59, 130, 246, 0.15);
+    }
+    #consent h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #e5e7eb;
+      margin-bottom: 10px;
+    }
+    #consent p {
+      font-size: 12px;
+      line-height: 1.55;
+      color: var(--muted);
+      margin-bottom: 18px;
+    }
+    #consent .row { display: flex; gap: 10px; justify-content: center; }
+    #consent button {
+      font: inherit;
+      font-size: 12px;
+      padding: 8px 18px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: #16181b;
+      color: var(--text);
+      cursor: pointer;
+      transition: border-color .15s, color .15s;
+    }
+    #consent button:hover { border-color: var(--blue); color: #fff; }
+    #consent #consent-accept {
+      background: var(--cyan);
+      border-color: var(--cyan);
+      color: #06121a;
+      font-weight: 700;
+    }
+    #consent #consent-accept:hover { background: #fff; border-color: #fff; color: #06121a; }
   </style>
 </head>
 <body>
@@ -241,6 +295,21 @@
   <div id="rotate">
     <div class="icon">⟳</div>
     <div>rotate your device to play</div>
+  </div>
+
+  <div id="consent" hidden>
+    <div class="card">
+      <h2>Anonymous analytics?</h2>
+      <p>
+        We'd like to count plays and see which levels are toughest, using
+        self-hosted, privacy-friendly <strong>Matomo</strong>. No ads, no
+        third parties, no personal data sold. You can play either way.
+      </p>
+      <div class="row">
+        <button id="consent-decline" type="button">No thanks</button>
+        <button id="consent-accept" type="button">Allow</button>
+      </div>
+    </div>
   </div>
 
   <div id="sysbtns">

@@ -56,7 +56,11 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
+      - name: Build (Matomo config injected from secrets)
+        run: pnpm build
+        env:
+          VITE_MATOMO_URL: ${{ secrets.MATOMO_URL }}
+          VITE_MATOMO_SITE_ID: ${{ secrets.MATOMO_SITE_ID }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

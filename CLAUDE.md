@@ -53,6 +53,8 @@ js/entities.js    Player, enemies, Boss, pickups, projectiles, particles
 js/game.js        engine: collisions, camera, interactions, background, render
 js/main.js        app shell: state machine, screens, HUD, save, share, mobile
 js/sharecard.js   score-card renderer (canvas → PNG)
+js/analytics.js   opt-in Matomo: consent modal → loads tracker only if a
+                  build injected VITE_MATOMO_URL/VITE_MATOMO_SITE_ID
 test/             validators (node) + browser harnesses (chromium headless)
 ```
 
@@ -151,6 +153,14 @@ builds and deploys to GitHub Pages automatically (set Pages source to
 `public/CNAME` pins the domain). If embedded in tabularis-website use an
 iframe with `allow="fullscreen"`. After changing share/OG URLs, regenerate
 `public/og.png`.
+
+Analytics (opt-in Matomo) is **off unless the build is fed secrets.** The
+deploy job passes repo secrets `MATOMO_URL` + `MATOMO_SITE_ID` as
+`VITE_MATOMO_URL`/`VITE_MATOMO_SITE_ID`; Vite inlines them into the bundle,
+then `js/analytics.js` shows the consent modal and loads the tracker only
+after the player clicks Allow. Raw source (no build) has no env → analytics
+stays off, so the test suite and `pnpm dev` never tracks. Preview the modal
+with `index.html?consent` (force-shows it even with no tracker configured).
 
 ## Content registry (keep in sync when adding things)
 
