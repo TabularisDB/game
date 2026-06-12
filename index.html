@@ -254,40 +254,36 @@
       white-space: nowrap;
     }
 
-    /* analytics consent modal — shown only when a tracker is configured */
+    /* analytics opt-in — bottom-right banner; anonymous tracking runs
+       regardless, this only upgrades to cookie-based measurement */
     #consent {
       position: fixed;
-      inset: 0;
+      right: max(16px, env(safe-area-inset-right));
+      bottom: max(16px, env(safe-area-inset-bottom));
       z-index: 30;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      background: rgba(8, 9, 10, 0.88);
     }
     #consent[hidden] { display: none; }
     #consent .card {
-      max-width: 380px;
+      max-width: 320px;
       background: #111214;
       border: 1px solid var(--border);
       border-radius: 10px;
-      padding: 22px;
-      text-align: center;
-      box-shadow: 0 0 60px rgba(59, 130, 246, 0.15);
+      padding: 16px;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.55), 0 0 40px rgba(59, 130, 246, 0.12);
     }
     #consent h2 {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 700;
       color: #e5e7eb;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
     #consent p {
       font-size: 12px;
       line-height: 1.55;
       color: var(--muted);
-      margin-bottom: 18px;
+      margin-bottom: 14px;
     }
-    #consent .row { display: flex; gap: 10px; justify-content: center; }
+    #consent .row { display: flex; gap: 10px; justify-content: flex-end; }
     #consent button {
       font: inherit;
       font-size: 12px;
@@ -337,15 +333,16 @@
   </div>
 
   <div id="consent" hidden>
-    <div class="card">
-      <h2>Anonymous analytics?</h2>
+    <div class="card" role="dialog" aria-label="Analytics preferences">
+      <h2>Cookie-based analytics?</h2>
       <p>
-        We'd like to count plays and see which levels are toughest, using
-        self-hosted, privacy-friendly <strong>Matomo</strong>. No ads, no
-        third parties, no personal data sold. You can play either way.
+        We already count plays anonymously with self-hosted, privacy-friendly
+        <strong>Matomo</strong> — no cookies, no third parties, no personal
+        data. Allow cookies for more accurate, returning-player stats? You can
+        play either way.
       </p>
       <div class="row">
-        <button id="consent-decline" type="button">No thanks</button>
+        <button id="consent-decline" type="button">Stay anonymous</button>
         <button id="consent-accept" type="button">Allow</button>
       </div>
     </div>

@@ -60,8 +60,9 @@ js/entities.js    Player, enemies, Boss, pickups, projectiles, particles
 js/game.js        engine: collisions, camera, interactions, background, render
 js/main.js        app shell: state machine, screens, HUD, save, share, mobile
 js/sharecard.js   score-card renderer (canvas → PNG)
-js/analytics.js   opt-in Matomo: consent modal → loads tracker only if a
-                  build injected VITE_MATOMO_URL/VITE_MATOMO_SITE_ID
+js/analytics.js   Matomo: loads cookieless/anonymous on start if a build
+                  injected VITE_MATOMO_URL/VITE_MATOMO_SITE_ID; bottom-right
+                  opt-in banner upgrades to cookie-based measurement
 test/             validators (node) + browser harnesses (chromium headless)
 ```
 
@@ -183,13 +184,17 @@ builds and deploys to GitHub Pages automatically (set Pages source to
 iframe with `allow="fullscreen"`. After changing share/OG URLs, regenerate
 `public/og.png`.
 
-Analytics (opt-in Matomo) is **off unless the build is fed secrets.** The
-deploy job passes repo secrets `MATOMO_URL` + `MATOMO_SITE_ID` as
-`VITE_MATOMO_URL`/`VITE_MATOMO_SITE_ID`; Vite inlines them into the bundle,
-then `js/analytics.js` shows the consent modal and loads the tracker only
-after the player clicks Allow. Raw source (no build) has no env → analytics
-stays off, so the test suite and `pnpm dev` never tracks. Preview the modal
-with `index.html?consent` (force-shows it even with no tracker configured).
+Analytics (Matomo) is **off unless the build is fed secrets.** The deploy job
+passes repo secrets `MATOMO_URL` + `MATOMO_SITE_ID` as
+`VITE_MATOMO_URL`/`VITE_MATOMO_SITE_ID`; Vite inlines them into the bundle.
+When configured, `js/analytics.js` starts Matomo in cookieless/anonymous mode
+immediately (`disableCookies()`, GDPR legitimate-interest — counts plays, no
+cookies, no personal data), then shows a bottom-right opt-in banner; clicking
+Allow upgrades to cookie-based measurement (`setCookieConsentGiven`), Stay
+anonymous keeps it cookieless. Same model as tabularis.dev's CookieConsent.
+Raw source (no build) has no env → analytics stays off, so the test suite and
+`pnpm dev` never track. Preview the banner with `index.html?consent`
+(force-shows it even with no tracker configured).
 
 ## Content registry (keep in sync when adding things)
 
