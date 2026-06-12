@@ -122,8 +122,10 @@ the smoke bot all branch on it).
   lingering overlap can't hurt. Boss: stomp = 1 hp, MCP bolt = ¼.
 - Boss arenas: while the boss lives, every 10s a `SkyDrop` parachutes in the
   next power tier the player is missing (MCP gun first), nothing if maxed.
-- Boss sprites: W2 = MySQL dolphin, W3 = PostgreSQL elephant (dedicated
-  grids in sprites.js); W1 keeps the generic `bossSprite` monster.
+- Boss sprites: W1 = SQLite hummingbird (no animal mascot, so the
+  "light as a feather" logo → a tiny, fast, embedded-everywhere bird),
+  W2 = MySQL dolphin, W3 = PostgreSQL elephant — all dedicated grids in
+  sprites.js (`BOSS_HUMMINGBIRD` / `BOSS_DOLPHIN` / `BOSS_ELEPHANT`).
 
 ## Testing (run after ANY level/engine change)
 

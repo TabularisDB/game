@@ -284,28 +284,27 @@ const LOCK = (X, Xd) => [
   '................',
 ].map(r => r.replace(/X/g, X).replace(/D/g, Xd));
 
-const BOSS = [
-  '..k...k..k...k..',
-  '.kXk.kXkkXk.kXk.',
-  '.kXXkkXXXXkkXXk.',
-  'kXXXXXXXXXXXXXXk',
-  'kXXXXXXXXXXXXXXk',
-  'kXwwwpXXXXpwwwXk',
-  'kXwwwpXXXXpwwwXk',
-  'kXXXXXXXXXXXXXXk',
-  'kXXXXXXXXXXXXXXk',
-  'kXXkXXkXXkXXkXXk',
-  'kXXXkXXkkXXkXXXk',
-  'kXXXXXXXXXXXXXXk',
-  'kDXXXXXXXXXXXXDk',
-  'kDDXXXXXXXXXXDDk',
-  '.kDDDDDDDDDDDDk.',
-  '..kkkkkkkkkkkk..',
+// World 1 boss — SQLite has no animal mascot, only its "light as a feather"
+// logo, so we lean on a hummingbird: tiny, fast, embedded everywhere. Hovering,
+// needle beak forward, wing raised, ruby throat, forked tail. Facing left.
+const BOSS_HUMMINGBIRD = [
+  '................',
+  '...........kkk..',
+  '..........kgggk.',
+  '.........kgggk..',
+  '........kgggk...',
+  '.......kggck....',
+  '....kkkccck.....',
+  'kkkkcwpcccck....',
+  '....kcccccck....',
+  '...krrcccckkk...',
+  '...krrcccCCCk...',
+  '....kcccCCk.....',
+  '.....kCCk.......',
+  '......kk........',
+  '................',
+  '................',
 ];
-function bossSprite(color) {
-  const map = { amber: ['a', 'A'], violet: ['m', 'M'], red: ['r', 'R'] }[color];
-  return render(BOSS.map(r => r.replace(/X/g, map[0]).replace(/D/g, map[1])));
-}
 
 // World 3 boss — PostgreSQL's elephant, trunk and tusk forward, facing left.
 const BOSS_ELEPHANT = [
@@ -645,7 +644,7 @@ export function buildSprites() {
     lockClosed: render(LOCK('r', 'R')),
     lockOpen: render(LOCK('g', 'G')),
     boss: {
-      amber: bossSprite('amber'),
+      amber: render(BOSS_HUMMINGBIRD),
       violet: render(BOSS_DOLPHIN),
       red: render(BOSS_ELEPHANT),
     },
